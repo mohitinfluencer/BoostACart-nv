@@ -3,6 +3,8 @@ import Link from "next/link"
 import { HeroGeometric } from "@/components/ui/shape-landing-hero"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Menu } from "lucide-react"
+import { getWhatsAppLink } from "@/lib/whatsapp"
+import { MessageCircle } from "lucide-react"
 
 const ShoppingCartIcon = () => (
   <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -305,7 +307,7 @@ export default function LandingPage() {
                 </li>
               </ul>
               <a
-                href="https://wa.me/918303208502"
+                href={getWhatsAppLink("918303208502", "pricing")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full py-2 sm:py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium text-center block shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 text-sm sm:text-base"
@@ -341,7 +343,7 @@ export default function LandingPage() {
                 </li>
               </ul>
               <a
-                href="https://wa.me/918303208502"
+                href={getWhatsAppLink("918303208502", "upgrade")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full py-2 sm:py-3 px-4 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-all duration-300 font-medium text-center block border border-white/20 hover:border-white/30 backdrop-blur-sm text-sm sm:text-base"
@@ -365,6 +367,33 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* CTA Section */}
+      <div className="mt-8 sm:mt-12 text-center">
+        <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 backdrop-blur-sm p-6 sm:p-8 rounded-2xl text-white border border-white/10">
+          <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Ready to Boost Your Cart Conversions?</h3>
+          <p className="text-sm sm:text-base text-white/70 mb-4 sm:mb-6">
+            Join thousands of stores already capturing more leads with BoostACart
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+            <Link
+              href="/auth/sign-up"
+              className="px-4 sm:px-6 py-2 sm:py-3 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-all duration-300 font-medium border border-white/20 hover:border-white/30 backdrop-blur-sm text-sm sm:text-base"
+            >
+              Start Free Trial
+            </Link>
+            <a
+              href={getWhatsAppLink("918303208502", "demo")}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-300 font-medium flex items-center justify-center space-x-2 shadow-lg shadow-green-500/25 hover:shadow-green-500/40 text-sm sm:text-base"
+            >
+              <MessageCircle className="h-4 sm:h-5 w-4 sm:w-5 flex-shrink-0" />
+              <span>Get Personal Demo</span>
+            </a>
+          </div>
+        </div>
+      </div>
 
       {/* Footer */}
       <footer className="bg-black/40 backdrop-blur-sm text-white py-8 sm:py-12 border-t border-white/10">

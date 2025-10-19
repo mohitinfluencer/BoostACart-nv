@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { MessageCircle, Mail, Phone, ArrowLeft } from "lucide-react"
+import { getWhatsAppLink } from "@/lib/whatsapp"
 
 export default function ContactPage() {
   return (
@@ -48,7 +49,7 @@ export default function ContactPage() {
                 </div>
               </div>
               <a
-                href="https://wa.me/918303208502"
+                href={getWhatsAppLink("918303208502", "support")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-2 sm:py-3 px-3 sm:px-4 rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-300 font-medium flex items-center justify-center space-x-2 shadow-lg shadow-green-500/25 hover:shadow-green-500/40 text-sm sm:text-base"
@@ -158,7 +159,7 @@ export default function ContactPage() {
                 Start Free Trial
               </Link>
               <a
-                href="https://wa.me/918303208502"
+                href={getWhatsAppLink("918303208502", "demo")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-300 font-medium flex items-center justify-center space-x-2 shadow-lg shadow-green-500/25 hover:shadow-green-500/40 text-sm sm:text-base"

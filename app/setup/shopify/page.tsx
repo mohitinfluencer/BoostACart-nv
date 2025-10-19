@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { ArrowLeft, Copy, Check, Code, ShoppingCart } from "lucide-react"
+import { getWhatsAppLink } from "@/lib/whatsapp"
 
 export default function ShopifySetupPage() {
   const [copied, setCopied] = useState(false)
@@ -238,7 +239,7 @@ document.addEventListener('DOMContentLoaded', function() {
               Contact Support
             </Link>
             <a
-              href="https://wa.me/918303208502"
+              href={getWhatsAppLink("918303208502", "support")}
               target="_blank"
               rel="noopener noreferrer"
               className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-300 font-medium shadow-lg shadow-green-500/25 hover:shadow-green-500/40"
