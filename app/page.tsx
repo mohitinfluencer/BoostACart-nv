@@ -137,7 +137,7 @@ export default function LandingPage() {
               Start Free Trial
             </Link>
             <a
-              href="https://youtu.be/udfKevSEDhw"
+              href="https://youtu.be/P3_cVI0ymGQ"
               target="_blank"
               rel="noopener noreferrer"
               className="px-8 py-4 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-all duration-300 font-semibold text-lg shadow-lg border border-white/20 flex items-center justify-center backdrop-blur-sm hover:border-white/30"
