@@ -7,8 +7,9 @@ import { Suspense } from "react"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "BoostACart",
-  description: "Created with v0",
+  title: "BoostACart – Add-to-Cart Lead Capture Tool to Recover Lost Sales",
+  description:
+    "BoostACart helps online stores capture email and phone numbers at add-to-cart to recover lost sales via WhatsApp, SMS, and email follow-ups.",
   generator: "v0.app",
   icons: {
     icon: "/favicon.png",
