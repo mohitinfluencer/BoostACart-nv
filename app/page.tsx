@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Menu } from "lucide-react"
 import { getWhatsAppLink } from "@/lib/whatsapp"
 import { MessageCircle } from "lucide-react"
+import ArrowRightIcon from "@/components/icons/ArrowRightIcon"
 
 const ShoppingCartIcon = () => (
   <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -322,6 +323,15 @@ export default function LandingPage() {
               <p className="text-lg text-white/70 mt-6">
                 If you are losing customers before checkout, BoostACart helps you recover them.
               </p>
+              <div className="mt-8">
+                <Link
+                  href="/shopify-cart-recovery"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-300 shadow-lg shadow-green-500/25 hover:shadow-green-500/40"
+                >
+                  Cart Recovery for Shopify Stores
+                  <ArrowRightIcon className="w-4 h-4" />
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -339,31 +349,35 @@ export default function LandingPage() {
                   <div className="flex-shrink-0 text-green-400">
                     <CheckIcon />
                   </div>
-                  <span>Capture high-intent shoppers before checkout</span>
+                  <span className="text-white/80 ml-3 text-sm sm:text-base">
+                    Capture high-intent shoppers before checkout
+                  </span>
                 </li>
                 <li className="flex items-start gap-3">
                   <div className="flex-shrink-0 text-green-400">
                     <CheckIcon />
                   </div>
-                  <span>Recover lost carts using WhatsApp, SMS, or email</span>
+                  <span className="text-white/80 ml-3 text-sm sm:text-base">
+                    Recover lost carts using WhatsApp, SMS, or email
+                  </span>
                 </li>
                 <li className="flex items-start gap-3">
                   <div className="flex-shrink-0 text-green-400">
                     <CheckIcon />
                   </div>
-                  <span>Increase conversion rates without ads</span>
+                  <span className="text-white/80 ml-3 text-sm sm:text-base">Increase conversion rates without ads</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <div className="flex-shrink-0 text-green-400">
                     <CheckIcon />
                   </div>
-                  <span>Works without slowing down your store</span>
+                  <span className="text-white/80 ml-3 text-sm sm:text-base">Works without slowing down your store</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <div className="flex-shrink-0 text-green-400">
                     <CheckIcon />
                   </div>
-                  <span>Easy to set up and use</span>
+                  <span className="text-white/80 ml-3 text-sm sm:text-base">Easy to set up and use</span>
                 </li>
               </ul>
             </div>
