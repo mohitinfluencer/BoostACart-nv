@@ -524,6 +524,57 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Popular Cart Recovery Resources Section */}
+      <section className="py-20 bg-[#030303] relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-900/5 to-transparent"></div>
+        <div className="max-w-4xl mx-auto px-4 relative">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Popular Cart Recovery Resources</h2>
+            <p className="text-lg text-white/60">Learn how to recover lost sales with our comprehensive guides</p>
+          </div>
+
+          <div className="bg-white/5 backdrop-blur-sm p-8 rounded-xl border border-white/10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Link
+                href="/shopify-add-to-cart-lead-capture"
+                className="text-blue-400 hover:text-blue-300 transition-colors font-medium flex items-center gap-2 group"
+              >
+                <span>→</span>
+                <span>Shopify add-to-cart lead capture</span>
+              </Link>
+              <Link
+                href="/recover-add-to-cart-customers"
+                className="text-blue-400 hover:text-blue-300 transition-colors font-medium flex items-center gap-2 group"
+              >
+                <span>→</span>
+                <span>Recover add-to-cart customers</span>
+              </Link>
+              <Link
+                href="/cart-recovery-for-dropshipping"
+                className="text-blue-400 hover:text-blue-300 transition-colors font-medium flex items-center gap-2 group"
+              >
+                <span>→</span>
+                <span>Cart recovery for dropshipping</span>
+              </Link>
+              <Link
+                href="/stop-abandoned-carts-shopify"
+                className="text-blue-400 hover:text-blue-300 transition-colors font-medium flex items-center gap-2 group"
+              >
+                <span>→</span>
+                <span>Stop abandoned carts on Shopify</span>
+              </Link>
+              <Link
+                href="/collect-email-at-add-to-cart"
+                className="text-blue-400 hover:text-blue-300 transition-colors font-medium flex items-center gap-2 group"
+              >
+                <span>→</span>
+                <span>Collect email at add-to-cart</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <div className="mt-8 sm:mt-12 text-center">
         <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 backdrop-blur-sm p-6 sm:p-8 rounded-2xl text-white border border-white/10">
