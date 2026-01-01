@@ -2,10 +2,11 @@
 
 import type React from "react"
 import type { Store, Lead } from "../types"
-import { TrendingUp, Users, Package, Calendar, Clock, Download } from "lucide-react"
+import { TrendingUp, Users, Package, Calendar, Clock, Download, Bookmark, List } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 
 interface LeadsAnalyticsProps {
   store: Store
@@ -13,6 +14,7 @@ interface LeadsAnalyticsProps {
 }
 
 const LeadsAnalytics: React.FC<LeadsAnalyticsProps> = ({ store, leads: initialLeads }) => {
+  const router = useRouter()
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle")
   const [leads, setLeads] = useState<any[]>(initialLeads || [])
   const [loading, setLoading] = useState(true)
@@ -28,6 +30,7 @@ const LeadsAnalytics: React.FC<LeadsAnalyticsProps> = ({ store, leads: initialLe
           .select("*")
           .eq("store_id", store.id)
           .order("created_at", { ascending: false })
+          .limit(20)
 
         if (error) {
           console.error("Error fetching leads:", error)
@@ -81,7 +84,6 @@ const LeadsAnalytics: React.FC<LeadsAnalyticsProps> = ({ store, leads: initialLe
   const todayLeads = leads.filter((lead) => lead.created_at?.startsWith(today)).length
   const thisMonthLeads = leads.filter((lead) => lead.created_at?.startsWith(thisMonth)).length
 
-  // Generate chart data for the last 7 days
   const chartData = Array.from({ length: 7 }, (_, i) => {
     const date = new Date()
     date.setDate(date.getDate() - (6 - i))
@@ -98,7 +100,6 @@ const LeadsAnalytics: React.FC<LeadsAnalyticsProps> = ({ store, leads: initialLe
     return lead.product_name || lead.detected_product || "Unknown Product"
   }
 
-  // Product analysis
   const productLeads = leads.reduce(
     (acc, lead) => {
       const product = resolveProductName(lead)
@@ -119,10 +120,8 @@ const LeadsAnalytics: React.FC<LeadsAnalyticsProps> = ({ store, leads: initialLe
       return
     }
 
-    // Create CSV headers
     const headers = ["Name", "Email", "Phone", "Product", "Timestamp"]
 
-    // Create CSV rows
     const csvRows = leads.map((lead) => [
       lead.name || "",
       lead.email || "",
@@ -131,12 +130,10 @@ const LeadsAnalytics: React.FC<LeadsAnalyticsProps> = ({ store, leads: initialLe
       new Date(lead.created_at).toLocaleString(),
     ])
 
-    // Combine headers and rows
     const csvContent = [headers, ...csvRows]
       .map((row) => row.map((field) => `"${field.toString().replace(/"/g, '""')}"`).join(","))
       .join("\n")
 
-    // Create and download the file
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
@@ -150,8 +147,24 @@ const LeadsAnalytics: React.FC<LeadsAnalyticsProps> = ({ store, leads: initialLe
 
   return (
     <div className="space-y-8">
+      <div className="flex flex-wrap gap-3">
+        <button
+          onClick={() => router.push("/dashboard/total-leads")}
+          className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+        >
+          <List className="h-4 w-4" />
+          <span>View All Leads</span>
+        </button>
+        <button
+          onClick={() => router.push("/dashboard/saved-leads")}
+          className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+        >
+          <Bookmark className="h-4 w-4" />
+          <span>Saved Leads</span>
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Total Leads */}
         <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl">
           <div className="flex items-center justify-between">
             <div>
@@ -165,7 +178,6 @@ const LeadsAnalytics: React.FC<LeadsAnalyticsProps> = ({ store, leads: initialLe
           </div>
         </div>
 
-        {/* This Month Leads */}
         <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl">
           <div className="flex items-center justify-between">
             <div>
@@ -179,7 +191,6 @@ const LeadsAnalytics: React.FC<LeadsAnalyticsProps> = ({ store, leads: initialLe
           </div>
         </div>
 
-        {/* Today Leads */}
         <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl">
           <div className="flex items-center justify-between">
             <div>
@@ -194,11 +205,7 @@ const LeadsAnalytics: React.FC<LeadsAnalyticsProps> = ({ store, leads: initialLe
         </div>
       </div>
 
-      {/* Widget Link Section */}
-
-      {/* Charts Section */}
       <div className="grid md:grid-cols-2 gap-8">
-        {/* Leads Over Time */}
         <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
             <TrendingUp className="h-5 w-5 mr-2 text-green-400" />
@@ -222,7 +229,6 @@ const LeadsAnalytics: React.FC<LeadsAnalyticsProps> = ({ store, leads: initialLe
           </ResponsiveContainer>
         </div>
 
-        {/* Top Products */}
         <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
             <Package className="h-5 w-5 mr-2 text-purple-400" />
@@ -247,13 +253,12 @@ const LeadsAnalytics: React.FC<LeadsAnalyticsProps> = ({ store, leads: initialLe
         </div>
       </div>
 
-      {/* Recent Leads Table */}
       <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-xl">
         <div className="p-6 border-b border-white/20">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-white flex items-center">
               <Users className="h-5 w-5 mr-2 text-blue-400" />
-              Recent Leads
+              Recent Leads (Last 20)
             </h3>
             <button
               onClick={downloadCSV}
@@ -292,7 +297,7 @@ const LeadsAnalytics: React.FC<LeadsAnalyticsProps> = ({ store, leads: initialLe
                   </td>
                 </tr>
               ) : leads.length > 0 ? (
-                leads.slice(0, 10).map((lead) => (
+                leads.map((lead) => (
                   <tr key={lead.id} className="hover:bg-white/5 transition-colors duration-200">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="font-medium text-white">{lead.name || "N/A"}</div>

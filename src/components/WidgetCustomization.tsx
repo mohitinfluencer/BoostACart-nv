@@ -156,11 +156,11 @@ const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpda
         </div>
 
         {/* Form Fields */}
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl">
-          <h4 className="font-medium text-white mb-4 flex items-center">
-            <Mail className="h-4 w-4 mr-2 text-green-400" />
-            Form Fields
-          </h4>
+        <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl border border-white/10 shadow-lg hover:bg-white/10 transition-all duration-300">
+          <div className="flex items-center mb-4">
+            <Mail className="h-5 w-5 mr-2 text-green-400" />
+            <h3 className="text-lg font-semibold text-white">Form Fields</h3>
+          </div>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -169,13 +169,22 @@ const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpda
                   Show Email Field
                 </label>
               </div>
-              <input
-                type="checkbox"
-                id="showEmail"
-                checked={settings.showEmail}
-                onChange={(e) => updateSetting("showEmail", e.target.checked)}
-                className="h-4 w-4 text-blue-400 focus:ring-blue-400 border-gray-600 rounded bg-white/10"
-              />
+              {/* Toggle Switch */}
+              <button
+                type="button"
+                role="switch"
+                aria-checked={settings.showEmail}
+                onClick={() => updateSetting("showEmail", !settings.showEmail)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+                  settings.showEmail ? "bg-blue-600" : "bg-gray-600"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${
+                    settings.showEmail ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -184,51 +193,69 @@ const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpda
                   Show Phone Field
                 </label>
               </div>
-              <input
-                type="checkbox"
-                id="showPhone"
-                checked={settings.showPhone}
-                onChange={(e) => updateSetting("showPhone", e.target.checked)}
-                className="h-4 w-4 text-blue-400 focus:ring-blue-400 border-gray-600 rounded bg-white/10"
-              />
+              {/* Toggle Switch */}
+              <button
+                type="button"
+                role="switch"
+                aria-checked={settings.showPhone}
+                onClick={() => updateSetting("showPhone", !settings.showPhone)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+                  settings.showPhone ? "bg-blue-600" : "bg-gray-600"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${
+                    settings.showPhone ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
             </div>
           </div>
         </div>
 
         {/* Discount Settings */}
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl">
-          <h4 className="font-medium text-white mb-4 flex items-center">
-            <Gift className="h-4 w-4 mr-2 text-orange-400" />
-            Discount Settings
-          </h4>
+        <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl border border-white/10 shadow-lg hover:bg-white/10 transition-all duration-300">
+          <div className="flex items-center mb-4">
+            <Gift className="h-5 w-5 mr-2 text-orange-400" />
+            <h3 className="text-lg font-semibold text-white">Discount Settings</h3>
+          </div>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Discount Code</label>
+              <label htmlFor="discountCode" className="block text-sm font-medium text-gray-300 mb-2">
+                Discount Code
+              </label>
               <input
                 type="text"
+                id="discountCode"
                 value={settings.discountCode}
                 onChange={(e) => updateSetting("discountCode", e.target.value)}
-                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-white placeholder-gray-400 backdrop-blur-sm"
-                placeholder="Enter discount code"
+                className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-300"
+                placeholder="SAVE20"
               />
             </div>
-            <div className="flex items-center justify-between p-3 bg-orange-500/10 rounded-lg border border-orange-400/20">
-              <div className="flex items-center">
-                <Gift className="h-4 w-4 mr-2 text-orange-400" />
-                <div>
-                  <label htmlFor="showCouponPage" className="text-sm font-medium text-gray-300">
-                    Show Coupon Page
-                  </label>
-                  <p className="text-xs text-gray-400 mt-1">Display discount code page after form submission</p>
-                </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <label htmlFor="showCouponPage" className="text-sm font-medium text-gray-300">
+                  Show Coupon Page
+                </label>
+                <p className="text-xs text-gray-400 mt-1">Display discount code page after form submission</p>
               </div>
-              <input
-                type="checkbox"
-                id="showCouponPage"
-                checked={settings.showCouponPage}
-                onChange={(e) => updateSetting("showCouponPage", e.target.checked)}
-                className="h-4 w-4 text-orange-400 focus:ring-orange-400 border-gray-600 rounded bg-white/10"
-              />
+              {/* Toggle Switch */}
+              <button
+                type="button"
+                role="switch"
+                aria-checked={settings.showCouponPage}
+                onClick={() => updateSetting("showCouponPage", !settings.showCouponPage)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+                  settings.showCouponPage ? "bg-green-600" : "bg-gray-600"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${
+                    settings.showCouponPage ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
             </div>
             <div className="text-xs text-gray-400 bg-white/5 p-3 rounded-lg">
               <strong>How it works:</strong>

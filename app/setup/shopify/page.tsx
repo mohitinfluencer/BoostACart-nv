@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Copy, Check, Code, ShoppingCart } from "lucide-react"
+import { ArrowLeft, Copy, Check, Code, ShoppingCart, HelpCircle } from "lucide-react"
 import { getWhatsAppLink } from "@/lib/whatsapp"
 
 export default function ShopifySetupPage() {
@@ -81,6 +81,38 @@ document.addEventListener('DOMContentLoaded', function() {
           <p className="text-xl text-white/60 max-w-2xl mx-auto">
             Follow these simple steps to integrate BoostACart into your Shopify store and start capturing more leads.
           </p>
+        </div>
+
+        <div className="mb-12 bg-gradient-to-r from-blue-600/20 to-purple-600/20 backdrop-blur-sm p-6 rounded-2xl text-white border border-white/10">
+          <div className="flex items-center mb-4">
+            <HelpCircle className="h-6 w-6 mr-2 text-blue-400" />
+            <h3 className="text-xl font-bold">Need Help Getting Started?</h3>
+          </div>
+          <p className="text-white/70 mb-4">Our support team is here to assist you with the integration process.</p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <a
+              href="https://youtu.be/kiyff1PVVE8"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 text-center"
+            >
+              Watch Setup Video
+            </a>
+            <Link
+              href="/contact"
+              className="flex-1 px-4 py-3 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-all duration-300 font-medium border border-white/20 hover:border-white/30 backdrop-blur-sm text-center"
+            >
+              Contact Support
+            </Link>
+            <a
+              href={getWhatsAppLink("918303208502", "support")}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-300 font-medium shadow-lg shadow-green-500/25 hover:shadow-green-500/40 text-center"
+            >
+              WhatsApp Support
+            </a>
+          </div>
         </div>
 
         {/* Step-by-Step Instructions */}

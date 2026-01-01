@@ -5,13 +5,16 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import LeadsAnalytics from "../../src/components/LeadsAnalytics"
 import WidgetCustomization from "../../src/components/WidgetCustomization"
-import { LogOut, User } from "lucide-react"
+import { User, ChevronDown, FileText, HelpCircle, MessageCircle } from "lucide-react"
 
 interface Store {
   id: string
   name: string
   domain: string
   user_id: string
+  plan: string
+  max_leads?: number
+  remaining_leads?: number
 }
 
 interface WidgetSettings {
@@ -37,6 +40,7 @@ export default function Dashboard() {
   const [store, setStore] = useState<Store | null>(null)
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [showAccountMenu, setShowAccountMenu] = useState(false)
   const [widgetSettings, setWidgetSettings] = useState<WidgetSettings>({
     heading: "Get Exclusive Discount!",
     description: "Leave your details and get 20% off your next order",
@@ -84,6 +88,19 @@ export default function Dashboard() {
         }
 
         const store = storeData[0]
+
+        if (store.plan === "Free" && store.max_leads !== 50) {
+          await supabase.from("stores").update({ max_leads: 50 }).eq("id", store.id)
+          store.max_leads = 50
+        } else if (store.plan === "Starter" && store.max_leads !== 600) {
+          await supabase.from("stores").update({ max_leads: 600 }).eq("id", store.id)
+          store.max_leads = 600
+        } else if (store.plan === "Pro") {
+          await supabase.from("stores").update({ max_leads: null, remaining_leads: null }).eq("id", store.id)
+          store.max_leads = null
+          store.remaining_leads = null
+        }
+
         setStore(store)
 
         const { data: settingsData, error: settingsError } = await supabase
@@ -217,18 +234,55 @@ export default function Dashboard() {
                 <p className="text-xs sm:text-sm text-gray-300 truncate">{store.domain}</p>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
-              <div className="flex items-center space-x-2 text-gray-300 text-xs sm:text-sm">
-                <User className="h-4 w-4 flex-shrink-0" />
-                <span className="truncate">{user?.email}</span>
-              </div>
+            <div className="relative">
               <button
-                onClick={handleSignOut}
-                className="flex items-center space-x-2 px-3 py-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300 text-sm w-full sm:w-auto justify-center sm:justify-start"
+                onClick={() => setShowAccountMenu(!showAccountMenu)}
+                className="flex items-center space-x-2 px-3 py-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
               >
-                <LogOut className="h-4 w-4 flex-shrink-0" />
-                <span>Sign Out</span>
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                  <User className="h-4 w-4 text-white" />
+                </div>
+                <ChevronDown className={`h-4 w-4 transition-transform ${showAccountMenu ? "rotate-180" : ""}`} />
               </button>
+
+              {showAccountMenu && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowAccountMenu(false)} />
+                  <div className="absolute right-0 mt-2 w-56 bg-slate-800 border border-white/20 rounded-lg shadow-xl z-20 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-white/10">
+                      <p className="text-xs text-gray-400">Signed in as</p>
+                      <p className="text-sm text-white truncate">{user?.email}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowAccountMenu(false)
+                        router.push("/dashboard/account")
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors flex items-center space-x-2"
+                    >
+                      <User className="h-4 w-4" />
+                      <span>My Account</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowAccountMenu(false)
+                        handleSignOut()
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors flex items-center space-x-2"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                        />
+                      </svg>
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -263,11 +317,39 @@ export default function Dashboard() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px:8 py-4 sm:py-8 relative z-10">
         {activeTab === "analytics" && <LeadsAnalytics store={storeWithSettings} leads={[]} />}
         {activeTab === "customization" && (
           <WidgetCustomization store={storeWithSettings} onUpdateWidget={onUpdateWidget} />
         )}
+      </div>
+
+      <div className="bg-white/5 backdrop-blur-sm border-t border-white/10 mt-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <button
+              onClick={() => router.push("/setup")}
+              className="flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white rounded-lg transition-all duration-300 text-sm"
+            >
+              <FileText className="h-4 w-4" />
+              <span>Setup Guide</span>
+            </button>
+            <button
+              onClick={() => router.push("/setup/shopify")}
+              className="flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white rounded-lg transition-all duration-300 text-sm"
+            >
+              <HelpCircle className="h-4 w-4" />
+              <span>Shopify Setup Guide</span>
+            </button>
+            <button
+              onClick={() => router.push("/contact")}
+              className="flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white rounded-lg transition-all duration-300 text-sm"
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span>Contact Us</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )
