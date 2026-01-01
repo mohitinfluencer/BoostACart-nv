@@ -15,6 +15,7 @@ interface Store {
   plan: string
   max_leads?: number
   remaining_leads?: number
+  total_leads?: number
 }
 
 interface WidgetSettings {
@@ -89,16 +90,26 @@ export default function Dashboard() {
 
         const store = storeData[0]
 
+        let needsUpdate = false
+        const updates: any = {}
+
         if (store.plan === "Free" && store.max_leads !== 50) {
-          await supabase.from("stores").update({ max_leads: 50 }).eq("id", store.id)
-          store.max_leads = 50
+          updates.max_leads = 50
+          updates.remaining_leads = 50 - (store.total_leads || 0)
+          needsUpdate = true
         } else if (store.plan === "Starter" && store.max_leads !== 600) {
-          await supabase.from("stores").update({ max_leads: 600 }).eq("id", store.id)
-          store.max_leads = 600
-        } else if (store.plan === "Pro") {
-          await supabase.from("stores").update({ max_leads: null, remaining_leads: null }).eq("id", store.id)
-          store.max_leads = null
-          store.remaining_leads = null
+          updates.max_leads = 600
+          updates.remaining_leads = 600 - (store.total_leads || 0)
+          needsUpdate = true
+        } else if (store.plan === "Pro" && store.max_leads !== 999999) {
+          updates.max_leads = 999999
+          updates.remaining_leads = 999999
+          needsUpdate = true
+        }
+
+        if (needsUpdate) {
+          await supabase.from("stores").update(updates).eq("id", store.id)
+          Object.assign(store, updates)
         }
 
         setStore(store)

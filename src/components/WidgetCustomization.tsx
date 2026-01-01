@@ -3,7 +3,20 @@
 import type React from "react"
 import { useState } from "react"
 import type { Store, WidgetSettings } from "../types"
-import { Palette, Eye, Save, Settings, ExternalLink, Mail, Phone, Gift, Copy, Link, CheckCircle } from "lucide-react"
+import {
+  Palette,
+  Eye,
+  Save,
+  Settings,
+  ExternalLink,
+  Mail,
+  Phone,
+  Gift,
+  Copy,
+  Link,
+  CheckCircle,
+  Power,
+} from "lucide-react"
 
 interface WidgetCustomizationProps {
   store: Store
@@ -345,33 +358,44 @@ const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpda
 
         {/* Advanced Settings */}
         <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl">
-          <h4 className="font-medium text-white mb-4">Advanced Settings</h4>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Overlay Opacity: {Math.round(settings.overlayOpacity * 100)}%
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={settings.overlayOpacity}
-                onChange={(e) => updateSetting("overlayOpacity", Number.parseFloat(e.target.value))}
-                className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer"
-              />
-            </div>
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="isActive"
-                checked={settings.isActive}
-                onChange={(e) => updateSetting("isActive", e.target.checked)}
-                className="h-4 w-4 text-blue-400 focus:ring-blue-400 border-gray-600 rounded bg-white/10"
-              />
-              <label htmlFor="isActive" className="ml-2 block text-sm text-gray-300">
-                Widget is active
-              </label>
+          <div className="mt-6">
+            <h4 className="text-base font-semibold text-gray-200 mb-4 flex items-center">
+              <Power className="h-5 w-5 mr-2 text-orange-400" />
+              Advanced Settings
+            </h4>
+            <p className="text-sm text-gray-400 mb-4">Overlay Opacity: {Math.round(settings.overlayOpacity * 100)}%</p>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={settings.overlayOpacity}
+              onChange={(e) => updateSetting("overlayOpacity", Number.parseFloat(e.target.value))}
+              className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer"
+            />
+            <div className="flex items-center justify-between mt-6">
+              <div>
+                <label htmlFor="isActive" className="text-sm font-medium text-gray-300">
+                  Widget is active
+                </label>
+                <p className="text-xs text-gray-400 mt-1">Enable or disable the widget on your store</p>
+              </div>
+              {/* Toggle Switch */}
+              <button
+                type="button"
+                role="switch"
+                aria-checked={settings.isActive}
+                onClick={() => updateSetting("isActive", !settings.isActive)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+                  settings.isActive ? "bg-blue-600" : "bg-gray-600"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${
+                    settings.isActive ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
             </div>
           </div>
         </div>
