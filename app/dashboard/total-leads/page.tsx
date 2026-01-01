@@ -81,17 +81,50 @@ export default function TotalLeadsPage() {
     if (selectedLeads.size === 0) return
 
     try {
+      // Get the full lead data for selected leads
+      const leadsToSave = leads.filter((lead) => selectedLeads.has(lead.id))
+
+      // Insert into saved_leads table
+      const savedLeadsData = leadsToSave.map((lead) => ({
+        store_id: storeId,
+        name: lead.name,
+        email: lead.email,
+        phone: lead.phone,
+        product_name: lead.product_name,
+        detected_product: lead.detected_product,
+        status: "saved",
+      }))
+
+      const { error: insertError } = await supabase.from("saved_leads").insert(savedLeadsData)
+
+      if (insertError) {
+        console.error("Error saving leads:", insertError)
+        alert("Failed to save leads: " + insertError.message)
+        return
+      }
+
+      // Also update is_saved flag in original leads table
       const updates = Array.from(selectedLeads).map((id) => ({
         id,
         is_saved: true,
       }))
 
-      const { error } = await supabase.from("leads").upsert(updates)
+      const { error: updateError } = await supabase.from("leads").upsert(updates)
 
-      if (!error) {
+      if (!updateError) {
         setLeads(leads.map((lead) => (selectedLeads.has(lead.id) ? { ...lead, is_saved: true } : lead)))
         setSelectedLeads(new Set())
-        alert(`${updates.length} lead(s) saved successfully!`)
+        const message = `${leadsToSave.length} lead(s) saved successfully!`
+        const toast = document.createElement("div")
+        toast.className =
+          "fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in"
+        toast.textContent = message
+        document.body.appendChild(toast)
+        setTimeout(() => {
+          toast.style.opacity = "0"
+          toast.style.transition = "opacity 0.3s"
+          setTimeout(() => document.body.removeChild(toast), 300)
+        }, 2000)
       }
     } catch (err) {
       console.error("Error saving leads:", err)

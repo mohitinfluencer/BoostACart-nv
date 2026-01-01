@@ -245,7 +245,7 @@ export default function Dashboard() {
                 <p className="text-xs sm:text-sm text-gray-300 truncate">{store.domain}</p>
               </div>
             </div>
-            <div className="relative">
+            <div className="relative z-[1000]">
               <button
                 onClick={() => setShowAccountMenu(!showAccountMenu)}
                 className="flex items-center space-x-2 px-3 py-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
@@ -258,8 +258,8 @@ export default function Dashboard() {
 
               {showAccountMenu && (
                 <>
-                  <div className="fixed inset-0 z-10" onClick={() => setShowAccountMenu(false)} />
-                  <div className="absolute right-0 mt-2 w-56 bg-slate-800 border border-white/20 rounded-lg shadow-xl z-20 overflow-hidden">
+                  <div className="fixed inset-0 z-[999]" onClick={() => setShowAccountMenu(false)} />
+                  <div className="absolute right-0 mt-2 w-56 bg-slate-800 border border-white/20 rounded-lg shadow-xl z-[1001] overflow-hidden">
                     <div className="px-4 py-3 border-b border-white/10">
                       <p className="text-xs text-gray-400">Signed in as</p>
                       <p className="text-sm text-white truncate">{user?.email}</p>

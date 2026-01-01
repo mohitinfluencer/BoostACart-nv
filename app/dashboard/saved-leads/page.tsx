@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Bookmark, Download, Trash2, ArrowLeft } from "lucide-react"
 
-interface Lead {
+interface SavedLead {
   id: string
   name: string
   email: string
@@ -13,13 +13,14 @@ interface Lead {
   product_name?: string
   detected_product?: string
   created_at: string
-  is_saved?: boolean
+  saved_at: string
+  status: string
 }
 
 export default function SavedLeadsPage() {
   const router = useRouter()
   const supabase = createClient()
-  const [leads, setLeads] = useState<Lead[]>([])
+  const [leads, setLeads] = useState<SavedLead[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set())
 
@@ -38,15 +39,16 @@ export default function SavedLeadsPage() {
 
         if (!storeData) return
 
-        const { data: leadsData, error } = await supabase
-          .from("leads")
+        const { data: savedLeadsData, error } = await supabase
+          .from("saved_leads")
           .select("*")
           .eq("store_id", storeData.id)
-          .eq("is_saved", true)
-          .order("created_at", { ascending: false })
+          .order("saved_at", { ascending: false })
 
-        if (!error && leadsData) {
-          setLeads(leadsData)
+        if (!error && savedLeadsData) {
+          setLeads(savedLeadsData)
+        } else if (error) {
+          console.error("Error loading saved leads:", error)
         }
       } catch (err) {
         console.error("Error loading saved leads:", err)
@@ -84,13 +86,14 @@ export default function SavedLeadsPage() {
       return
     }
 
-    const headers = ["Name", "Email", "Phone", "Product", "Timestamp"]
+    const headers = ["Name", "Email", "Phone", "Product", "Saved Date", "Status"]
     const csvRows = leadsToDownload.map((lead) => [
       lead.name || "",
       lead.email || "",
       lead.phone || "",
       lead.product_name || lead.detected_product || "Unknown",
-      new Date(lead.created_at).toLocaleString(),
+      new Date(lead.saved_at).toLocaleString(),
+      lead.status || "saved",
     ])
 
     const csvContent = [headers, ...csvRows]
@@ -114,16 +117,27 @@ export default function SavedLeadsPage() {
     if (!confirm(`Are you sure you want to delete ${selectedLeads.size} saved lead(s)?`)) return
 
     try {
-      const { error } = await supabase.from("leads").delete().in("id", Array.from(selectedLeads))
+      const { error } = await supabase.from("saved_leads").delete().in("id", Array.from(selectedLeads))
 
       if (!error) {
         setLeads(leads.filter((lead) => !selectedLeads.has(lead.id)))
         setSelectedLeads(new Set())
-        alert("Leads deleted successfully!")
+
+        // Show success toast
+        const toast = document.createElement("div")
+        toast.className =
+          "fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-[1000] animate-fade-in"
+        toast.textContent = "Saved leads deleted successfully!"
+        document.body.appendChild(toast)
+        setTimeout(() => {
+          toast.style.opacity = "0"
+          toast.style.transition = "opacity 0.3s"
+          setTimeout(() => document.body.removeChild(toast), 300)
+        }, 2000)
       }
     } catch (err) {
-      console.error("Error deleting leads:", err)
-      alert("Failed to delete leads")
+      console.error("Error deleting saved leads:", err)
+      alert("Failed to delete saved leads")
     }
   }
 
@@ -194,7 +208,7 @@ export default function SavedLeadsPage() {
                     Product
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Timestamp
+                    Saved Date
                   </th>
                 </tr>
               </thead>
@@ -234,7 +248,7 @@ export default function SavedLeadsPage() {
                         <div className="text-gray-300">{lead.product_name || lead.detected_product || "Unknown"}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-gray-400 text-sm">{new Date(lead.created_at).toLocaleString()}</div>
+                        <div className="text-gray-400 text-sm">{new Date(lead.saved_at).toLocaleString()}</div>
                       </td>
                     </tr>
                   ))
