@@ -101,7 +101,6 @@ export default function TotalLeadsPage() {
       if (insertError) {
         console.error("Error saving leads:", insertError)
         showToast(`Failed to save leads: ${insertError.message}`, "error")
-        setIsSaving(false)
         return
       }
 
@@ -121,7 +120,7 @@ export default function TotalLeadsPage() {
       console.error("Error saving leads:", err)
       showToast("Failed to save leads", "error")
     } finally {
-      setTimeout(() => setIsSaving(false), 800)
+      setTimeout(() => setIsSaving(false), 600)
     }
   }
 
@@ -224,7 +223,9 @@ export default function TotalLeadsPage() {
                 onClick={handleSaveLeads}
                 disabled={isSaving}
                 className={`flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg transition-all duration-300 shadow-lg ${
-                  isSaving ? "opacity-60 cursor-not-allowed" : "hover:from-blue-700 hover:to-purple-700 hover:shadow-xl"
+                  isSaving
+                    ? "opacity-60 cursor-not-allowed"
+                    : "hover:from-blue-700 hover:to-purple-700 hover:shadow-xl transform hover:scale-105"
                 }`}
               >
                 {isSaving ? (
@@ -301,8 +302,8 @@ export default function TotalLeadsPage() {
                   leads.map((lead) => (
                     <tr
                       key={lead.id}
-                      className={`hover:bg-white/5 transition-colors duration-200 ${
-                        selectedLeads.has(lead.id) ? "bg-blue-500/10" : ""
+                      className={`hover:bg-white/5 transition-all duration-200 ${
+                        selectedLeads.has(lead.id) ? "bg-blue-500/10" : lead.is_saved ? "animate-flash-green" : ""
                       }`}
                     >
                       <td className="px-6 py-4">
