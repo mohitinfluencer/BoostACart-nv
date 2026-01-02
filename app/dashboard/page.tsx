@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import LeadsAnalytics from "../../src/components/LeadsAnalytics"
 import WidgetCustomization from "../../src/components/WidgetCustomization"
@@ -41,7 +42,6 @@ export default function Dashboard() {
   const [store, setStore] = useState<Store | null>(null)
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [showAccountMenu, setShowAccountMenu] = useState(false)
   const [widgetSettings, setWidgetSettings] = useState<WidgetSettings>({
     heading: "Get Exclusive Discount!",
     description: "Leave your details and get 20% off your next order",
@@ -245,66 +245,13 @@ export default function Dashboard() {
                 <p className="text-xs sm:text-sm text-gray-300 truncate">{store.domain}</p>
               </div>
             </div>
-            <div className="relative">
-              <button
-                onClick={() => setShowAccountMenu(!showAccountMenu)}
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 border-2 border-white/30 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
-              >
-                <User className="h-5 w-5 text-white" />
-              </button>
-
-              {showAccountMenu && (
-                <>
-                  {/* Click-outside overlay */}
-                  <div className="fixed inset-0" style={{ zIndex: 1999 }} onClick={() => setShowAccountMenu(false)} />
-
-                  {/* Dropdown menu */}
-                  <div
-                    className="absolute right-0 mt-2 w-56 bg-slate-900 border border-white/20 rounded-lg shadow-2xl overflow-hidden"
-                    style={{
-                      position: "absolute",
-                      top: "100%",
-                      right: 0,
-                      zIndex: 2000,
-                    }}
-                  >
-                    <div className="px-4 py-3 border-b border-white/10 bg-slate-800/50">
-                      <p className="text-xs text-gray-400 mb-1">Signed in as</p>
-                      <p className="text-sm text-white truncate font-medium">{user?.email}</p>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        setShowAccountMenu(false)
-                        router.push("/dashboard/account")
-                      }}
-                      className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200 flex items-center space-x-3"
-                    >
-                      <User className="h-4 w-4" />
-                      <span>My Account</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setShowAccountMenu(false)
-                        handleSignOut()
-                      }}
-                      className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all duration-200 flex items-center space-x-3 border-t border-white/10"
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                        />
-                      </svg>
-                      <span>Sign Out</span>
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+            <Link
+              href="/dashboard/account"
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 border-2 border-white/30 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+              title="Go to Account"
+            >
+              <User className="h-5 w-5 text-white" />
+            </Link>
           </div>
         </div>
       </div>
