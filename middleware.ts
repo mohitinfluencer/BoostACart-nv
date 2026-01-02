@@ -2,11 +2,28 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith("/widget/")) {
-    return NextResponse.next()
+  const response = NextResponse.next()
+
+  if (request.nextUrl.pathname.startsWith("/embed/")) {
+    // Remove X-Frame-Options to allow embedding
+    response.headers.delete("X-Frame-Options")
+
+    // Set CSP to allow embedding from any domain
+    response.headers.set("Content-Security-Policy", "frame-ancestors *")
+
+    // Add CORS headers for cross-origin requests
+    response.headers.set("Access-Control-Allow-Origin", "*")
+    response.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+    response.headers.set("Access-Control-Allow-Headers", "Content-Type")
+
+    return response
   }
 
-  return NextResponse.next()
+  if (request.nextUrl.pathname.startsWith("/widget/")) {
+    return response
+  }
+
+  return response
 }
 
 export const config = {
