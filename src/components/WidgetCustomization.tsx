@@ -39,14 +39,30 @@ const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpda
   }
 
   const handleSwitchChange = async (key: keyof WidgetSettings, checked: boolean) => {
+    console.log("[v0] Switch toggled:", key, checked)
+
     // Update local state immediately for instant UI feedback
     if (key === "showEmail") setShowEmail(checked)
     if (key === "showPhone") setShowPhone(checked)
     if (key === "showCouponPage") setShowCouponPage(checked)
     if (key === "isActive") setIsActive(checked)
 
-    // Save to Supabase
-    await onUpdateWidget({ [key]: checked })
+    // Update settings state
+    const newSettings = { ...settings, [key]: checked }
+    setSettings(newSettings)
+
+    // Save to Supabase via parent callback
+    try {
+      await onUpdateWidget({ [key]: checked })
+      console.log("[v0] Successfully saved to Supabase:", key, checked)
+    } catch (error) {
+      console.error("[v0] Error saving switch state:", error)
+      // Revert local state on error
+      if (key === "showEmail") setShowEmail(!checked)
+      if (key === "showPhone") setShowPhone(!checked)
+      if (key === "showCouponPage") setShowCouponPage(!checked)
+      if (key === "isActive") setIsActive(!checked)
+    }
   }
 
   const saveSettings = () => {
@@ -184,6 +200,7 @@ const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpda
                 id="showEmail"
                 checked={showEmail}
                 onCheckedChange={(checked) => handleSwitchChange("showEmail", checked)}
+                variant="success"
               />
             </div>
             <div className="flex items-center justify-between">
@@ -197,6 +214,7 @@ const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpda
                 id="showPhone"
                 checked={showPhone}
                 onCheckedChange={(checked) => handleSwitchChange("showPhone", checked)}
+                variant="success"
               />
             </div>
           </div>
@@ -231,6 +249,7 @@ const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpda
                 id="showCouponPage"
                 checked={showCouponPage}
                 onCheckedChange={(checked) => handleSwitchChange("showCouponPage", checked)}
+                variant="success"
               />
             </div>
             <p className="text-xs text-gray-400">Display discount code page after form submission</p>
@@ -348,6 +367,7 @@ const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpda
                 id="isActive"
                 checked={isActive}
                 onCheckedChange={(checked) => handleSwitchChange("isActive", checked)}
+                variant="success"
               />
             </div>
           </div>
