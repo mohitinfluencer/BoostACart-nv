@@ -23,6 +23,7 @@ export default function TotalLeadsPage() {
   const [loading, setLoading] = useState(true)
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set())
   const [storeId, setStoreId] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     const loadLeads = async () => {
@@ -80,11 +81,11 @@ export default function TotalLeadsPage() {
   const handleSaveLeads = async () => {
     if (selectedLeads.size === 0) return
 
+    setIsSaving(true)
+
     try {
-      // Get the full lead data for selected leads
       const leadsToSave = leads.filter((lead) => selectedLeads.has(lead.id))
 
-      // Insert into saved_leads table
       const savedLeadsData = leadsToSave.map((lead) => ({
         store_id: storeId,
         name: lead.name,
@@ -99,11 +100,11 @@ export default function TotalLeadsPage() {
 
       if (insertError) {
         console.error("Error saving leads:", insertError)
-        alert("Failed to save leads: " + insertError.message)
+        showToast(`Failed to save leads: ${insertError.message}`, "error")
+        setIsSaving(false)
         return
       }
 
-      // Also update is_saved flag in original leads table
       const updates = Array.from(selectedLeads).map((id) => ({
         id,
         is_saved: true,
@@ -114,21 +115,13 @@ export default function TotalLeadsPage() {
       if (!updateError) {
         setLeads(leads.map((lead) => (selectedLeads.has(lead.id) ? { ...lead, is_saved: true } : lead)))
         setSelectedLeads(new Set())
-        const message = `${leadsToSave.length} lead(s) saved successfully!`
-        const toast = document.createElement("div")
-        toast.className =
-          "fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in"
-        toast.textContent = message
-        document.body.appendChild(toast)
-        setTimeout(() => {
-          toast.style.opacity = "0"
-          toast.style.transition = "opacity 0.3s"
-          setTimeout(() => document.body.removeChild(toast), 300)
-        }, 2000)
+        showToast(`${leadsToSave.length} lead(s) saved successfully! 🎉`, "success")
       }
     } catch (err) {
       console.error("Error saving leads:", err)
-      alert("Failed to save leads")
+      showToast("Failed to save leads", "error")
+    } finally {
+      setTimeout(() => setIsSaving(false), 800)
     }
   }
 
@@ -184,6 +177,26 @@ export default function TotalLeadsPage() {
     }
   }
 
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    const toast = document.createElement("div")
+    toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-[9999] animate-fade-in ${
+      type === "success"
+        ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white"
+        : "bg-gradient-to-r from-red-500 to-pink-500 text-white"
+    }`
+    toast.textContent = message
+    document.body.appendChild(toast)
+    setTimeout(() => {
+      toast.style.opacity = "0"
+      toast.style.transition = "opacity 0.3s"
+      setTimeout(() => {
+        if (document.body.contains(toast)) {
+          document.body.removeChild(toast)
+        }
+      }, 300)
+    }, 3000)
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -209,10 +222,22 @@ export default function TotalLeadsPage() {
               <span className="text-sm text-gray-300">{selectedLeads.size} selected</span>
               <button
                 onClick={handleSaveLeads}
-                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg"
+                disabled={isSaving}
+                className={`flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg transition-all duration-300 shadow-lg ${
+                  isSaving ? "opacity-60 cursor-not-allowed" : "hover:from-blue-700 hover:to-purple-700 hover:shadow-xl"
+                }`}
               >
-                <Save className="h-4 w-4" />
-                <span>Save Leads</span>
+                {isSaving ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    <span>Save Leads</span>
+                  </>
+                )}
               </button>
               <button
                 onClick={handleDownload}

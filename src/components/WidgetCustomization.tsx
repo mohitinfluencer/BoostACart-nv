@@ -259,12 +259,12 @@ const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpda
                 role="switch"
                 aria-checked={settings.showCouponPage}
                 onClick={() => updateSetting("showCouponPage", !settings.showCouponPage)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 ${
                   settings.showCouponPage ? "bg-green-600" : "bg-gray-600"
                 }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 shadow-sm ${
                     settings.showCouponPage ? "translate-x-6" : "translate-x-1"
                   }`}
                 />
@@ -386,12 +386,12 @@ const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpda
                 role="switch"
                 aria-checked={settings.isActive}
                 onClick={() => updateSetting("isActive", !settings.isActive)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${
-                  settings.isActive ? "bg-blue-600" : "bg-gray-600"
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+                  settings.isActive ? "bg-green-600 focus:ring-green-500" : "bg-gray-600 focus:ring-gray-500"
                 }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 shadow-sm ${
                     settings.isActive ? "translate-x-6" : "translate-x-1"
                   }`}
                 />
