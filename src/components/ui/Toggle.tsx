@@ -25,7 +25,7 @@ export function Toggle({ checked, onChange, variant = "default", ariaLabel, disa
       aria-label={ariaLabel}
       onClick={() => !disabled && onChange(!checked)}
       disabled={disabled}
-      className={`${baseClasses} ${variantClasses[variant]} ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+      className={`${baseClasses} ${variantClasses[variant]} ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} ${checked ? "shadow-sm" : ""}`}
       style={{
         minWidth: "42px",
         minHeight: "22px",
@@ -34,8 +34,8 @@ export function Toggle({ checked, onChange, variant = "default", ariaLabel, disa
       }}
     >
       <span
-        className={`inline-block h-[16px] w-[16px] transform rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out ${
-          checked ? "translate-x-[23px]" : "translate-x-[3px]"
+        className={`inline-block h-[16px] w-[16px] transform rounded-full bg-white shadow-sm transition-all duration-200 ease-in-out ${
+          checked ? "translate-x-[23px] scale-110" : "translate-x-[3px] scale-100"
         }`}
         style={{
           minWidth: "16px",
