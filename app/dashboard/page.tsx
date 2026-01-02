@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import LeadsAnalytics from "../../src/components/LeadsAnalytics"
 import WidgetCustomization from "../../src/components/WidgetCustomization"
-import { User, ChevronDown, FileText, HelpCircle, MessageCircle } from "lucide-react"
+import { User, FileText, HelpCircle, MessageCircle } from "lucide-react"
 
 interface Store {
   id: string
@@ -245,45 +245,51 @@ export default function Dashboard() {
                 <p className="text-xs sm:text-sm text-gray-300 truncate">{store.domain}</p>
               </div>
             </div>
-            <div className="relative" style={{ zIndex: 2000 }}>
+            <div className="relative">
               <button
                 onClick={() => setShowAccountMenu(!showAccountMenu)}
-                className="flex items-center space-x-2 px-3 py-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
-                style={{ position: "relative", zIndex: 2000 }}
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 border-2 border-white/30 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
               >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
-                  <User className="h-4 w-4 text-white" />
-                </div>
-                <ChevronDown className={`h-4 w-4 transition-transform ${showAccountMenu ? "rotate-180" : ""}`} />
+                <User className="h-5 w-5 text-white" />
               </button>
 
               {showAccountMenu && (
                 <>
+                  {/* Click-outside overlay */}
                   <div className="fixed inset-0" style={{ zIndex: 1999 }} onClick={() => setShowAccountMenu(false)} />
+
+                  {/* Dropdown menu */}
                   <div
-                    className="absolute right-0 mt-2 w-56 bg-slate-800/95 backdrop-blur-md border border-white/20 rounded-lg shadow-xl overflow-hidden"
-                    style={{ zIndex: 2001 }}
+                    className="absolute right-0 mt-2 w-56 bg-slate-900 border border-white/20 rounded-lg shadow-2xl overflow-hidden"
+                    style={{
+                      position: "absolute",
+                      top: "100%",
+                      right: 0,
+                      zIndex: 2000,
+                    }}
                   >
-                    <div className="px-4 py-3 border-b border-white/10">
-                      <p className="text-xs text-gray-400">Signed in as</p>
-                      <p className="text-sm text-white truncate">{user?.email}</p>
+                    <div className="px-4 py-3 border-b border-white/10 bg-slate-800/50">
+                      <p className="text-xs text-gray-400 mb-1">Signed in as</p>
+                      <p className="text-sm text-white truncate font-medium">{user?.email}</p>
                     </div>
+
                     <button
                       onClick={() => {
                         setShowAccountMenu(false)
                         router.push("/dashboard/account")
                       }}
-                      className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors flex items-center space-x-2"
+                      className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200 flex items-center space-x-3"
                     >
                       <User className="h-4 w-4" />
                       <span>My Account</span>
                     </button>
+
                     <button
                       onClick={() => {
                         setShowAccountMenu(false)
                         handleSignOut()
                       }}
-                      className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors flex items-center space-x-2"
+                      className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all duration-200 flex items-center space-x-3 border-t border-white/10"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path

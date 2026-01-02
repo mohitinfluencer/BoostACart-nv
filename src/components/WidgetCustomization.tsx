@@ -1,23 +1,10 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
 import type { Store, WidgetSettings } from "../types"
-import {
-  Palette,
-  Eye,
-  Save,
-  Settings,
-  ExternalLink,
-  Mail,
-  Phone,
-  Gift,
-  Copy,
-  Link,
-  CheckCircle,
-  Power,
-} from "lucide-react"
-import { Toggle } from "./ui/Toggle"
+import { Palette, Eye, Save, Settings, ExternalLink, Mail, Phone, Gift, Copy, Link, CheckCircle } from "lucide-react"
 
 interface WidgetCustomizationProps {
   store: Store
@@ -25,9 +12,22 @@ interface WidgetCustomizationProps {
 }
 
 const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpdateWidget }) => {
+  const supabase = createClient()
   const [settings, setSettings] = useState<WidgetSettings>(store.widgetSettings)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [copied, setCopied] = useState(false)
+
+  const [showEmail, setShowEmail] = useState(Boolean(store.widgetSettings.showEmail))
+  const [showPhone, setShowPhone] = useState(Boolean(store.widgetSettings.showPhone))
+  const [showCouponPage, setShowCouponPage] = useState(Boolean(store.widgetSettings.showCouponPage))
+  const [isActive, setIsActive] = useState(Boolean(store.widgetSettings.isActive))
+
+  useEffect(() => {
+    setShowEmail(Boolean(store.widgetSettings.showEmail))
+    setShowPhone(Boolean(store.widgetSettings.showPhone))
+    setShowCouponPage(Boolean(store.widgetSettings.showCouponPage))
+    setIsActive(Boolean(store.widgetSettings.isActive))
+  }, [store.widgetSettings])
 
   const updateSetting = (key: keyof WidgetSettings, value: any) => {
     const newSettings = { ...settings, [key]: value }
@@ -35,6 +35,52 @@ const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpda
     setHasUnsavedChanges(true)
     // Auto-update preview
     onUpdateWidget({ [key]: value })
+  }
+
+  const handleToggleChange = async (key: keyof WidgetSettings, value: boolean) => {
+    // Update local state immediately for visual feedback
+    if (key === "showEmail") setShowEmail(value)
+    if (key === "showPhone") setShowPhone(value)
+    if (key === "showCouponPage") setShowCouponPage(value)
+    if (key === "isActive") setIsActive(value)
+
+    // Update settings state
+    const newSettings = { ...settings, [key]: value }
+    setSettings(newSettings)
+
+    // Save to Supabase immediately
+    try {
+      const { error } = await supabase.from("widget_settings").upsert(
+        {
+          store_id: store.id,
+          heading: newSettings.heading,
+          description: newSettings.description,
+          button_text: newSettings.buttonText,
+          background_color: newSettings.backgroundColor,
+          text_color: newSettings.textColor,
+          button_color: newSettings.buttonColor,
+          overlay_opacity: newSettings.overlayOpacity,
+          is_active: key === "isActive" ? value : newSettings.isActive,
+          show_email: key === "showEmail" ? value : newSettings.showEmail,
+          show_phone: key === "showPhone" ? value : newSettings.showPhone,
+          discount_code: newSettings.discountCode,
+          redirect_url: newSettings.redirectUrl,
+          show_coupon_page: key === "showCouponPage" ? value : newSettings.showCouponPage,
+        },
+        {
+          onConflict: "store_id",
+        },
+      )
+
+      if (error) {
+        console.error("Error saving toggle setting:", error)
+      } else {
+        // Also trigger parent callback
+        onUpdateWidget(newSettings)
+      }
+    } catch (err) {
+      console.error("Error saving toggle setting:", err)
+    }
   }
 
   const saveSettings = () => {
@@ -170,10 +216,10 @@ const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpda
         </div>
 
         {/* Form Fields */}
-        <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl border border-white/10 shadow-lg hover:bg-white/10 transition-all duration-300">
+        <div className="bg-white/5 backdrop-blur-md border border-white/20 rounded-xl p-6 shadow-xl">
           <div className="flex items-center mb-4">
             <Mail className="h-5 w-5 mr-2 text-green-400" />
-            <h3 className="text-lg font-semibold text-white">Form Fields</h3>
+            <h2 className="text-lg font-semibold text-white">Form Fields</h2>
           </div>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -183,12 +229,21 @@ const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpda
                   Show Email Field
                 </label>
               </div>
-              <Toggle
-                checked={settings.showEmail}
-                onChange={(checked) => updateSetting("showEmail", checked)}
-                variant="default"
-                ariaLabel="Toggle email field visibility"
-              />
+              <button
+                type="button"
+                role="switch"
+                aria-checked={showEmail}
+                onClick={() => handleToggleChange("showEmail", !showEmail)}
+                className={`relative inline-flex h-[22px] w-[42px] flex-shrink-0 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+                  showEmail ? "bg-blue-600 focus:ring-blue-500" : "bg-gray-600/80 focus:ring-gray-500"
+                }`}
+              >
+                <span
+                  className={`inline-block h-[16px] w-[16px] transform rounded-full bg-white shadow-sm transition-all duration-200 ${
+                    showEmail ? "translate-x-[23px]" : "translate-x-[3px]"
+                  }`}
+                />
+              </button>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -197,21 +252,30 @@ const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpda
                   Show Phone Field
                 </label>
               </div>
-              <Toggle
-                checked={settings.showPhone}
-                onChange={(checked) => updateSetting("showPhone", checked)}
-                variant="default"
-                ariaLabel="Toggle phone field visibility"
-              />
+              <button
+                type="button"
+                role="switch"
+                aria-checked={showPhone}
+                onClick={() => handleToggleChange("showPhone", !showPhone)}
+                className={`relative inline-flex h-[22px] w-[42px] flex-shrink-0 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+                  showPhone ? "bg-blue-600 focus:ring-blue-500" : "bg-gray-600/80 focus:ring-gray-500"
+                }`}
+              >
+                <span
+                  className={`inline-block h-[16px] w-[16px] transform rounded-full bg-white shadow-sm transition-all duration-200 ${
+                    showPhone ? "translate-x-[23px]" : "translate-x-[3px]"
+                  }`}
+                />
+              </button>
             </div>
           </div>
         </div>
 
         {/* Discount Settings */}
-        <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl border border-white/10 shadow-lg hover:bg-white/10 transition-all duration-300">
+        <div className="bg-white/5 backdrop-blur-md border border-white/20 rounded-xl p-6 shadow-xl">
           <div className="flex items-center mb-4">
             <Gift className="h-5 w-5 mr-2 text-orange-400" />
-            <h3 className="text-lg font-semibold text-white">Discount Settings</h3>
+            <h2 className="text-lg font-semibold text-white">Discount Settings</h2>
           </div>
           <div className="space-y-4">
             <div>
@@ -227,20 +291,27 @@ const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpda
                 placeholder="SAVE20"
               />
             </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <label htmlFor="showCouponPage" className="text-sm font-medium text-gray-300">
-                  Show Coupon Page
-                </label>
-                <p className="text-xs text-gray-400 mt-1">Display discount code page after form submission</p>
-              </div>
-              <Toggle
-                checked={settings.showCouponPage}
-                onChange={(checked) => updateSetting("showCouponPage", checked)}
-                variant="success"
-                ariaLabel="Toggle coupon page visibility"
-              />
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="showCouponPage" className="text-sm font-medium text-gray-300">
+                Show Coupon Page
+              </label>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={showCouponPage}
+                onClick={() => handleToggleChange("showCouponPage", !showCouponPage)}
+                className={`relative inline-flex h-[22px] w-[42px] flex-shrink-0 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+                  showCouponPage ? "bg-blue-600 focus:ring-blue-500" : "bg-gray-600/80 focus:ring-gray-500"
+                }`}
+              >
+                <span
+                  className={`inline-block h-[16px] w-[16px] transform rounded-full bg-white shadow-sm transition-all duration-200 ${
+                    showCouponPage ? "translate-x-[23px]" : "translate-x-[3px]"
+                  }`}
+                />
+              </button>
             </div>
+            <p className="text-xs text-gray-400">Display discount code page after form submission</p>
             <div className="text-xs text-gray-400 bg-white/5 p-3 rounded-lg">
               <strong>How it works:</strong>
               <ul className="mt-1 space-y-1">
@@ -328,12 +399,12 @@ const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpda
         </div>
 
         {/* Advanced Settings */}
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl">
-          <div className="mt-6">
-            <h4 className="text-base font-semibold text-gray-200 mb-4 flex items-center">
-              <Power className="h-5 w-5 mr-2 text-orange-400" />
-              Advanced Settings
-            </h4>
+        <div className="bg-white/5 backdrop-blur-md border border-white/20 rounded-xl p-6 shadow-xl">
+          <div className="flex items-center mb-4">
+            <Settings className="h-5 w-5 mr-2 text-purple-400" />
+            <h2 className="text-lg font-semibold text-white">Advanced Settings</h2>
+          </div>
+          <div className="space-y-4">
             <p className="text-sm text-gray-400 mb-4">Overlay Opacity: {Math.round(settings.overlayOpacity * 100)}%</p>
             <input
               type="range"
@@ -344,19 +415,28 @@ const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpda
               onChange={(e) => updateSetting("overlayOpacity", Number.parseFloat(e.target.value))}
               className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer"
             />
-            <div className="flex items-center justify-between mt-6">
+            <div className="flex items-center justify-between pt-4 border-t border-white/10">
               <div>
                 <label htmlFor="isActive" className="text-sm font-medium text-gray-300">
                   Widget is active
                 </label>
                 <p className="text-xs text-gray-400 mt-1">Enable or disable the widget on your store</p>
               </div>
-              <Toggle
-                checked={settings.isActive}
-                onChange={(checked) => updateSetting("isActive", checked)}
-                variant="success"
-                ariaLabel="Toggle widget active state"
-              />
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isActive}
+                onClick={() => handleToggleChange("isActive", !isActive)}
+                className={`relative inline-flex h-[22px] w-[42px] flex-shrink-0 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+                  isActive ? "bg-[#3DDC97] focus:ring-green-500" : "bg-gray-600/80 focus:ring-gray-500"
+                }`}
+              >
+                <span
+                  className={`inline-block h-[16px] w-[16px] transform rounded-full bg-white shadow-sm transition-all duration-200 ${
+                    isActive ? "translate-x-[23px]" : "translate-x-[3px]"
+                  }`}
+                />
+              </button>
             </div>
           </div>
         </div>
