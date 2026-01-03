@@ -101,7 +101,6 @@
   }
 
   window.addEventListener("message", (event) => {
-    // Accept messages from BOOSTACART_DOMAIN for security
     if (event.origin !== BOOSTACART_DOMAIN) {
       return
     }
@@ -111,24 +110,14 @@
     }
 
     if (event.data && event.data.type === "BOOSTACART_GO_TO_CART") {
-      console.log("[BoostACart] Navigating to /cart")
+      console.log("[BoostACart] Navigating to cart:", event.data.cartUrl || "/cart")
 
       // Close the widget first
       window.BoostACart.close()
 
-      // Navigate to Shopify's cart page (relative URL)
-      window.location.href = "/cart"
-    }
-
-    if (event.data && event.data.type === "BOOSTACART_OPEN_CART_TAB") {
-      console.log("[BoostACart] Opening cart in new tab")
-
+      // Navigate to cart using the relative URL from the message
       var cartUrl = event.data.cartUrl || "/cart"
-
-      // Open cart in new tab
-      window.open(cartUrl, "_blank")
-
-      // Widget stays open - user can close it manually
+      window.location.href = cartUrl
     }
   })
 

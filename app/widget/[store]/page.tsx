@@ -253,6 +253,19 @@ export default function WidgetPage({
       await navigator.clipboard.writeText(store.widgetSettings.discountCode)
       setIsCopied(true)
       console.log("[v0] Code copied successfully")
+
+      setTimeout(() => {
+        const parentOrigin = document.referrer ? new URL(document.referrer).origin : "*"
+        console.log("[v0] Sending BOOSTACART_GO_TO_CART to parent origin:", parentOrigin)
+
+        window.parent.postMessage(
+          {
+            type: "BOOSTACART_GO_TO_CART",
+            cartUrl: "/cart",
+          },
+          parentOrigin,
+        )
+      }, 500)
     } catch (err) {
       console.error("[v0] Failed to copy code:", err)
     }
@@ -311,7 +324,6 @@ export default function WidgetPage({
           aria-labelledby="success-title"
           aria-describedby="success-description"
         >
-          {/* Success Icon */}
           {isCopied ? (
             <div className="mx-auto w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-4 animate-bounce">
               <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -324,16 +336,14 @@ export default function WidgetPage({
             </div>
           )}
 
-          {/* Updated title and subtitle */}
           <h2 id="success-title" className="text-2xl font-bold mb-2">
             {isCopied ? "Code copied successfully" : "Coupon Ready!"}
           </h2>
 
           <p id="success-description" className="text-sm opacity-90 mb-6">
-            {isCopied ? "Your discount code is ready to use" : "Your discount code has been generated"}
+            {isCopied ? "Redirecting you to cart..." : "Your discount code has been generated"}
           </p>
 
-          {/* Discount Code Display */}
           <div
             className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 p-4 rounded-xl mb-6"
             aria-live="polite"
@@ -351,42 +361,33 @@ export default function WidgetPage({
               backgroundColor: isCopied ? "#10b981" : store.widgetSettings.buttonColor,
               boxShadow: "0 4px 14px 0 rgba(0, 0, 0, 0.2)",
             }}
-            aria-label={isCopied ? "Coupon code copied to clipboard" : "Copy coupon code to clipboard"}
+            aria-label={isCopied ? "Code copied, redirecting to cart" : "Copy code and go to cart"}
           >
             {isCopied ? (
               <span className="flex items-center justify-center gap-2">
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <svg
+                  className="animate-spin h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
-                Copied!
+                Redirecting...
               </span>
             ) : (
-              "Copy Code"
+              "Copy Code & Go to Cart"
             )}
           </button>
 
-          {isCopied && (
-            <a
-              href={cartUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full py-4 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-opacity-50"
-              style={{
-                backgroundColor: store.widgetSettings.buttonColor,
-                boxShadow: "0 4px 14px 0 rgba(0, 0, 0, 0.2)",
-              }}
-              aria-label="Go to cart to apply discount code"
-            >
-              Go to Cart
-            </a>
-          )}
-
           <p className="text-xs opacity-75 leading-relaxed mt-4">
-            {isCopied ? "Paste your discount code at checkout" : "Click to copy your discount code"}
+            {isCopied ? "Taking you to checkout now" : "Click to copy and continue shopping"}
           </p>
         </div>
       </div>
