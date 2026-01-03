@@ -250,16 +250,18 @@ export default function WidgetPage({
     if (!store?.widgetSettings.discountCode || isButtonDisabled) return
 
     try {
-      // Copy code to clipboard
       await navigator.clipboard.writeText(store.widgetSettings.discountCode)
       setIsCopied(true)
       setIsButtonDisabled(true)
       console.log("[v0] Code copied successfully")
 
-      // Open cart in new tab using fully qualified URL
-      const cartUrl = store.shopify_domain ? `https://${store.shopify_domain}/cart` : "/cart"
-      console.log("[v0] Opening cart in new tab:", cartUrl)
-      window.open(cartUrl, "_blank")
+      const redirectUrl = store.widgetSettings.redirectUrl
+        ? store.widgetSettings.redirectUrl
+        : `https://${store.shopify_domain}/cart`
+
+      console.log("[v0] Opening redirect URL in new tab:", redirectUrl)
+
+      window.open(redirectUrl, "_blank", "noopener,noreferrer")
 
       // Re-enable button after 1.5 seconds
       setTimeout(() => {
