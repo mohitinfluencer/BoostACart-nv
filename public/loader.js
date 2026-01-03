@@ -111,14 +111,13 @@
     }
 
     if (event.data && event.data.type === "BOOSTACART_GO_TO_CART") {
-      var cartUrl = event.data.cartUrl || "/cart"
-      console.log("[BoostACart] Navigating to cart:", cartUrl)
+      console.log("[BoostACart] Navigating to /cart")
 
       // Close the widget first
       window.BoostACart.close()
 
-      // Navigate to cart URL
-      window.location.href = cartUrl
+      // Navigate to Shopify's cart page (relative URL)
+      window.location.href = "/cart"
     }
   })
 

@@ -226,15 +226,12 @@ export default function WidgetPage({
       if (store.widgetSettings.showCouponPage) {
         setIsSubmitted(true)
       } else {
-        const cartUrl = store.widgetSettings.redirectUrl || `https://${store.domain}/cart`
-        const targetOrigin = getParentOrigin()
-        console.log("[v0] Sending navigation message to origin:", targetOrigin)
+        console.log("[v0] Sending navigation request to parent")
         window.parent.postMessage(
           {
             type: "BOOSTACART_GO_TO_CART",
-            cartUrl: cartUrl,
           },
-          targetOrigin,
+          "*",
         )
       }
     } catch (err) {
@@ -249,38 +246,14 @@ export default function WidgetPage({
     if (store?.widgetSettings.discountCode) {
       navigator.clipboard.writeText(store.widgetSettings.discountCode)
 
-      const cartUrl = store.widgetSettings.redirectUrl || `https://${store.domain}/cart`
-      const targetOrigin = getParentOrigin()
-      console.log("[v0] Sending navigation message to origin:", targetOrigin)
+      console.log("[v0] Sending navigation request to parent")
       window.parent.postMessage(
         {
           type: "BOOSTACART_GO_TO_CART",
-          cartUrl: cartUrl,
         },
-        targetOrigin,
+        "*",
       )
     }
-  }
-
-  const getParentOrigin = (): string => {
-    try {
-      // First, try to get the origin from document.referrer
-      if (document.referrer) {
-        const referrerUrl = new URL(document.referrer)
-        return referrerUrl.origin
-      }
-
-      // Fallback: try to get the parent's location origin directly
-      if (window.parent !== window && window.parent.location.origin) {
-        return window.parent.location.origin
-      }
-    } catch (e) {
-      // If cross-origin restrictions prevent access, log and use wildcard as last resort
-      console.warn("[v0] Could not determine parent origin, using wildcard:", e)
-    }
-
-    // Last resort fallback
-    return "*"
   }
 
   if (loading) {
