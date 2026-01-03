@@ -32,28 +32,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to save lead" }, { status: 500 })
     }
 
-    const { data: storeResults } = await supabase
-      .from("stores")
-      .select("total_leads, leads_this_month, remaining_leads")
-      .eq("id", store_id)
-      .limit(1)
-
-    console.log("[API] Store lookup returned:", storeResults?.length || 0, "rows")
-
-    if (storeResults && storeResults.length > 0) {
-      const store = storeResults[0]
-      await supabase
-        .from("stores")
-        .update({
-          total_leads: (store.total_leads || 0) + 1,
-          leads_this_month: (store.leads_this_month || 0) + 1,
-          remaining_leads: Math.max((store.remaining_leads || 0) - 1, 0),
-        })
-        .eq("id", store_id)
-    } else {
-      console.log("[API] Store not found for id:", store_id)
-    }
-
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("[API] Error:", error)

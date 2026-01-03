@@ -43,7 +43,7 @@ export default function AccountPage() {
 
         const { data: storeData, error: storeError } = await supabase
           .from("stores")
-          .select("*")
+          .select("id, name, domain, user_id, plan, max_leads, store_slug")
           .eq("user_id", user.id)
           .limit(1)
 
@@ -58,7 +58,34 @@ export default function AccountPage() {
           return
         }
 
-        setStore(storeData[0])
+        const storeRecord = storeData[0]
+
+        const { count: totalLeadsCount } = await supabase
+          .from("leads")
+          .select("*", { count: "exact", head: true })
+          .eq("store_id", storeRecord.id)
+
+        const { count: monthLeadsCount } = await supabase
+          .from("leads")
+          .select("*", { count: "exact", head: true })
+          .eq("store_id", storeRecord.id)
+          .gte("created_at", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
+
+        const total_leads = totalLeadsCount || 0
+        const leads_this_month = monthLeadsCount || 0
+
+        const max_leads = storeRecord.max_leads || 50
+        const remaining_leads = Math.max(max_leads - total_leads, 0)
+
+        const store = {
+          ...storeRecord,
+          total_leads,
+          leads_this_month,
+          remaining_leads,
+          max_leads,
+        }
+
+        setStore(store)
       } catch (err) {
         console.error("Error loading account:", err)
       } finally {

@@ -18,6 +18,7 @@ interface Store {
   max_leads?: number
   remaining_leads?: number
   total_leads?: number
+  leads_this_month?: number
 }
 
 interface WidgetSettings {
@@ -74,7 +75,7 @@ export default function Dashboard() {
 
         const { data: storeData, error: storeError } = await supabase
           .from("stores")
-          .select("id, name, domain, shopify_domain, user_id, plan, max_leads, remaining_leads, total_leads")
+          .select("id, name, domain, shopify_domain, user_id, plan, max_leads")
           .eq("user_id", user.id)
           .limit(1)
 
@@ -89,28 +90,52 @@ export default function Dashboard() {
           return
         }
 
-        const store = storeData[0]
+        const storeRecord = storeData[0]
 
+        const { count: totalLeadsCount } = await supabase
+          .from("leads")
+          .select("*", { count: "exact", head: true })
+          .eq("store_id", storeRecord.id)
+
+        const { count: monthLeadsCount } = await supabase
+          .from("leads")
+          .select("*", { count: "exact", head: true })
+          .eq("store_id", storeRecord.id)
+          .gte("created_at", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
+
+        const total_leads = totalLeadsCount || 0
+        const leads_this_month = monthLeadsCount || 0
+
+        let max_leads = storeRecord.max_leads
         let needsUpdate = false
         const updates: any = {}
 
-        if (store.plan === "Free" && store.max_leads !== 50) {
+        if (storeRecord.plan === "Free" && max_leads !== 50) {
           updates.max_leads = 50
-          updates.remaining_leads = 50 - (store.total_leads || 0)
+          max_leads = 50
           needsUpdate = true
-        } else if (store.plan === "Starter" && store.max_leads !== 600) {
+        } else if (storeRecord.plan === "Starter" && max_leads !== 600) {
           updates.max_leads = 600
-          updates.remaining_leads = 600 - (store.total_leads || 0)
+          max_leads = 600
           needsUpdate = true
-        } else if (store.plan === "Pro" && store.max_leads !== 999999) {
+        } else if (storeRecord.plan === "Pro" && max_leads !== 999999) {
           updates.max_leads = 999999
-          updates.remaining_leads = 999999
+          max_leads = 999999
           needsUpdate = true
         }
 
         if (needsUpdate) {
-          await supabase.from("stores").update(updates).eq("id", store.id)
-          Object.assign(store, updates)
+          await supabase.from("stores").update(updates).eq("id", storeRecord.id)
+        }
+
+        const remaining_leads = Math.max(max_leads - total_leads, 0)
+
+        const store = {
+          ...storeRecord,
+          max_leads,
+          total_leads,
+          leads_this_month,
+          remaining_leads,
         }
 
         setStore(store)
