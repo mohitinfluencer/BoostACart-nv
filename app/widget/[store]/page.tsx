@@ -312,17 +312,25 @@ export default function WidgetPage({
           aria-describedby="success-description"
         >
           {/* Success Icon */}
-          <div className="text-5xl mb-4 animate-bounce" aria-hidden="true">
-            🎉
-          </div>
+          {isCopied ? (
+            <div className="mx-auto w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-4 animate-bounce">
+              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+          ) : (
+            <div className="text-5xl mb-4 animate-bounce" aria-hidden="true">
+              🎉
+            </div>
+          )}
 
           {/* Updated title and subtitle */}
           <h2 id="success-title" className="text-2xl font-bold mb-2">
-            Coupon Ready!
+            {isCopied ? "Code copied successfully" : "Coupon Ready!"}
           </h2>
 
           <p id="success-description" className="text-sm opacity-90 mb-6">
-            Your discount code has been copied
+            {isCopied ? "Your discount code is ready to use" : "Your discount code has been generated"}
           </p>
 
           {/* Discount Code Display */}
@@ -354,40 +362,31 @@ export default function WidgetPage({
                     clipRule="evenodd"
                   />
                 </svg>
-                Coupon Copied
+                Copied!
               </span>
             ) : (
-              "Copy Coupon"
+              "Copy Code"
             )}
           </button>
-
-          {isCopied && (
-            <div className="mb-4 space-y-1" role="status" aria-live="polite">
-              <div className="text-sm font-medium opacity-90">Paste this code at checkout</div>
-            </div>
-          )}
 
           {isCopied && (
             <a
               href={cartUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full py-4 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-opacity-50 mb-3"
+              className="block w-full py-4 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-opacity-50"
               style={{
                 backgroundColor: store.widgetSettings.buttonColor,
                 boxShadow: "0 4px 14px 0 rgba(0, 0, 0, 0.2)",
               }}
-              aria-label="Open cart in new tab"
+              aria-label="Go to cart to apply discount code"
             >
-              Open Cart in New Tab
+              Go to Cart
             </a>
           )}
 
-          {/* Updated helper text */}
-          <p className="text-xs opacity-75 leading-relaxed">
-            {isCopied
-              ? "Click below to open your cart and paste the code"
-              : "Click to copy your discount code to clipboard"}
+          <p className="text-xs opacity-75 leading-relaxed mt-4">
+            {isCopied ? "Paste your discount code at checkout" : "Click to copy your discount code"}
           </p>
         </div>
       </div>
