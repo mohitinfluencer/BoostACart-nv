@@ -138,10 +138,10 @@ export default async function WidgetPage({
     }
 
     const productName =
-      searchParams.get("product_name") ||
-      searchParams.get("product") ||
-      searchParams.get("title") ||
-      searchParams.get("p") ||
+      (typeof searchParams?.product_name === "string" ? searchParams.product_name : null) ||
+      (typeof searchParams?.product === "string" ? searchParams.product : null) ||
+      (typeof searchParams?.title === "string" ? searchParams.title : null) ||
+      (typeof searchParams?.p === "string" ? searchParams.p : null) ||
       "Product"
     setDetectedProduct(productName)
   }, [shopifyDomain, searchParams, supabase])
@@ -154,8 +154,8 @@ export default async function WidgetPage({
     console.log("[v0] Widget settings:", store.widgetSettings)
     console.log("[v0] Form data:", formData)
 
-    if (store.remainingLeads <= 0) {
-      setError(`Lead limit reached for ${store.plan} plan. Please upgrade to continue collecting leads.`)
+    if ((store?.remainingLeads || 0) <= 0) {
+      setError(`Lead limit reached for ${store?.plan || "current"} plan. Please upgrade to continue collecting leads.`)
       return
     }
 
