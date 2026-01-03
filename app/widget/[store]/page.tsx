@@ -245,51 +245,27 @@ export default function WidgetPage({
   }
 
   const handleCopyCode = async () => {
-    if (!store?.widgetSettings.discountCode || isRedirecting) return
+    if (!store?.widgetSettings.discountCode || isCopied) return
 
     try {
-      // Copy to clipboard
       await navigator.clipboard.writeText(store.widgetSettings.discountCode)
 
       // Show copied feedback
       setIsCopied(true)
-      setIsRedirecting(true)
 
-      console.log("[v0] Code copied successfully, preparing to redirect")
+      console.log("[v0] Code copied successfully, requesting new tab")
 
-      const isInIframe = window.self !== window.parent
-
-      // Small delay for user to see the "Copied!" message
-      setTimeout(() => {
-        if (isInIframe) {
-          // Running in iframe - send message to parent
-          console.log("[v0] Running in iframe - sending navigation request to parent")
-          window.parent.postMessage(
-            {
-              type: "BOOSTACART_GO_TO_CART",
-            },
-            "*",
-          )
-        } else {
-          // Running standalone - redirect directly
-          console.log("[v0] Running standalone - redirecting directly to cart")
-          window.location.href = "/cart"
-        }
-      }, 800)
+      // Send message to parent to open cart in new tab
+      window.parent.postMessage(
+        {
+          type: "BOOSTACART_OPEN_CART_TAB",
+          cartUrl: "/cart",
+        },
+        "*",
+      )
     } catch (err) {
       console.error("[v0] Failed to copy code:", err)
-      // Fallback: still attempt navigation
-      const isInIframe = window.self !== window.parent
-      if (isInIframe) {
-        window.parent.postMessage(
-          {
-            type: "BOOSTACART_GO_TO_CART",
-          },
-          "*",
-        )
-      } else {
-        window.location.href = "/cart"
-      }
+      setIsCopied(false)
     }
   }
 
@@ -369,48 +345,42 @@ export default function WidgetPage({
             </div>
           </div>
 
-          {/* Copy & Redirect Button */}
           <button
             onClick={handleCopyCode}
-            disabled={isRedirecting}
-            className="w-full py-4 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none focus:outline-none focus:ring-4 focus:ring-opacity-50 mb-3"
+            disabled={isCopied}
+            className="w-full py-4 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 disabled:opacity-90 disabled:cursor-default focus:outline-none focus:ring-4 focus:ring-opacity-50 mb-3"
             style={{
               backgroundColor: store.widgetSettings.buttonColor,
-              boxShadow: isRedirecting ? "none" : "0 4px 14px 0 rgba(0, 0, 0, 0.2)",
+              boxShadow: "0 4px 14px 0 rgba(0, 0, 0, 0.2)",
             }}
-            aria-label={isCopied ? "Code copied, redirecting to cart" : "Copy discount code and go to cart"}
+            aria-label={isCopied ? "Code copied to clipboard" : "Copy discount code"}
           >
-            {isRedirecting ? (
+            {isCopied ? (
               <span className="flex items-center justify-center gap-2">
-                <svg
-                  className="animate-spin h-5 w-5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                   <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
                   />
                 </svg>
-                {isCopied ? "Copied! Redirecting..." : "Redirecting..."}
+                Code Copied!
               </span>
             ) : (
-              "Copy Code & Go to Cart"
+              "Copy Code"
             )}
           </button>
 
-          {/* Success Message */}
           {isCopied && (
-            <div className="text-green-600 text-sm font-medium mb-2 animate-pulse" role="status" aria-live="polite">
-              ✓ Code copied to clipboard!
+            <div className="space-y-1 mb-2" role="status" aria-live="polite">
+              <div className="text-green-600 text-sm font-semibold">✓ Code copied to clipboard</div>
+              <div className="text-xs opacity-75">A new tab has been opened for your cart</div>
             </div>
           )}
 
-          {/* Helper Text */}
-          <p className="text-xs opacity-75 leading-relaxed">Click to copy the code and continue shopping</p>
+          {!isCopied && (
+            <p className="text-xs opacity-75 leading-relaxed">Click to copy the code and open cart in a new tab</p>
+          )}
         </div>
       </div>
     )

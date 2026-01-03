@@ -119,6 +119,17 @@
       // Navigate to Shopify's cart page (relative URL)
       window.location.href = "/cart"
     }
+
+    if (event.data && event.data.type === "BOOSTACART_OPEN_CART_TAB") {
+      console.log("[BoostACart] Opening cart in new tab")
+
+      var cartUrl = event.data.cartUrl || "/cart"
+
+      // Open cart in new tab
+      window.open(cartUrl, "_blank")
+
+      // Widget stays open - user can close it manually
+    }
   })
 
   console.log("[BoostACart] Loader initialized")
