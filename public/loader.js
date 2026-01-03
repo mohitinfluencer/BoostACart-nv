@@ -7,6 +7,8 @@
     return
   }
 
+  var BOOSTACART_DOMAIN = "https://boostacart-beta-v1.vercel.app"
+
   // Create the BoostACart global object
   window.BoostACart = {
     // Current iframe reference
@@ -31,10 +33,8 @@
       var productId = options.product_id || options.productId || ""
       var productTitle = options.product_title || options.productTitle || "Product"
 
-      // Build iframe URL
-      var baseUrl = window.location.origin
       var embedUrl =
-        baseUrl +
+        BOOSTACART_DOMAIN +
         "/embed/" +
         encodeURIComponent(shop) +
         "?product_id=" +
