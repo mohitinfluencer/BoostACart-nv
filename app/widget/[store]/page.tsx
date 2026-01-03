@@ -257,25 +257,39 @@ export default function WidgetPage({
 
       console.log("[v0] Code copied successfully, preparing to redirect")
 
+      const isInIframe = window.self !== window.parent
+
       // Small delay for user to see the "Copied!" message
       setTimeout(() => {
-        console.log("[v0] Sending navigation request to parent")
+        if (isInIframe) {
+          // Running in iframe - send message to parent
+          console.log("[v0] Running in iframe - sending navigation request to parent")
+          window.parent.postMessage(
+            {
+              type: "BOOSTACART_GO_TO_CART",
+            },
+            "*",
+          )
+        } else {
+          // Running standalone - redirect directly
+          console.log("[v0] Running standalone - redirecting directly to cart")
+          window.location.href = "/cart"
+        }
+      }, 800)
+    } catch (err) {
+      console.error("[v0] Failed to copy code:", err)
+      // Fallback: still attempt navigation
+      const isInIframe = window.self !== window.parent
+      if (isInIframe) {
         window.parent.postMessage(
           {
             type: "BOOSTACART_GO_TO_CART",
           },
           "*",
         )
-      }, 800)
-    } catch (err) {
-      console.error("[v0] Failed to copy code:", err)
-      // Fallback: still send navigation message even if copy fails
-      window.parent.postMessage(
-        {
-          type: "BOOSTACART_GO_TO_CART",
-        },
-        "*",
-      )
+      } else {
+        window.location.href = "/cart"
+      }
     }
   }
 
