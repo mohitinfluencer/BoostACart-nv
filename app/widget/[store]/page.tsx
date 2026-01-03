@@ -24,6 +24,7 @@ interface Store {
   id: string
   name: string
   domain: string
+  shopify_domain: string
   plan: string
   remainingLeads: number
   maxLeads: number
@@ -106,6 +107,7 @@ export default function WidgetPage({
             id: storeData.id,
             name: storeData.name,
             domain: storeData.domain,
+            shopify_domain: storeData.shopify_domain || storeData.domain,
             plan: storeData.plan || "Free",
             remainingLeads: storeData.remaining_leads || 0,
             maxLeads: storeData.max_leads || 100,
@@ -249,23 +251,10 @@ export default function WidgetPage({
 
     try {
       await navigator.clipboard.writeText(store.widgetSettings.discountCode)
-
-      // Show copied feedback
       setIsCopied(true)
-
-      console.log("[v0] Code copied successfully, requesting new tab")
-
-      // Send message to parent to open cart in new tab
-      window.parent.postMessage(
-        {
-          type: "BOOSTACART_OPEN_CART_TAB",
-          cartUrl: "/cart",
-        },
-        "*",
-      )
+      console.log("[v0] Code copied successfully")
     } catch (err) {
       console.error("[v0] Failed to copy code:", err)
-      setIsCopied(false)
     }
   }
 
@@ -305,6 +294,8 @@ export default function WidgetPage({
   }
 
   if (isSubmitted) {
+    const cartUrl = store?.shopify_domain ? `https://${store.shopify_domain}/cart` : "/cart"
+
     return (
       <div
         className="min-h-screen flex items-center justify-center p-4"
@@ -325,14 +316,13 @@ export default function WidgetPage({
             🎉
           </div>
 
-          {/* Title */}
+          {/* Updated title and subtitle */}
           <h2 id="success-title" className="text-2xl font-bold mb-2">
-            Thank You!
+            Coupon Ready!
           </h2>
 
-          {/* Subtitle */}
           <p id="success-description" className="text-sm opacity-90 mb-6">
-            Your exclusive discount code:
+            Your discount code has been copied
           </p>
 
           {/* Discount Code Display */}
@@ -348,39 +338,57 @@ export default function WidgetPage({
           <button
             onClick={handleCopyCode}
             disabled={isCopied}
-            className="w-full py-4 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 disabled:opacity-90 disabled:cursor-default focus:outline-none focus:ring-4 focus:ring-opacity-50 mb-3"
+            className="w-full py-4 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 disabled:opacity-90 disabled:cursor-not-allowed focus:outline-none focus:ring-4 focus:ring-opacity-50 mb-3"
             style={{
-              backgroundColor: store.widgetSettings.buttonColor,
+              backgroundColor: isCopied ? "#10b981" : store.widgetSettings.buttonColor,
               boxShadow: "0 4px 14px 0 rgba(0, 0, 0, 0.2)",
             }}
-            aria-label={isCopied ? "Code copied to clipboard" : "Copy discount code"}
+            aria-label={isCopied ? "Coupon code copied to clipboard" : "Copy coupon code to clipboard"}
           >
             {isCopied ? (
               <span className="flex items-center justify-center gap-2">
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                   <path
                     fillRule="evenodd"
                     d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                     clipRule="evenodd"
                   />
                 </svg>
-                Code Copied!
+                Coupon Copied
               </span>
             ) : (
-              "Copy Code"
+              "Copy Coupon"
             )}
           </button>
 
           {isCopied && (
-            <div className="space-y-1 mb-2" role="status" aria-live="polite">
-              <div className="text-green-600 text-sm font-semibold">✓ Code copied to clipboard</div>
-              <div className="text-xs opacity-75">A new tab has been opened for your cart</div>
+            <div className="mb-4 space-y-1" role="status" aria-live="polite">
+              <div className="text-sm font-medium opacity-90">Paste this code at checkout</div>
             </div>
           )}
 
-          {!isCopied && (
-            <p className="text-xs opacity-75 leading-relaxed">Click to copy the code and open cart in a new tab</p>
+          {isCopied && (
+            <a
+              href={cartUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full py-4 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-opacity-50 mb-3"
+              style={{
+                backgroundColor: store.widgetSettings.buttonColor,
+                boxShadow: "0 4px 14px 0 rgba(0, 0, 0, 0.2)",
+              }}
+              aria-label="Open cart in new tab"
+            >
+              Open Cart in New Tab
+            </a>
           )}
+
+          {/* Updated helper text */}
+          <p className="text-xs opacity-75 leading-relaxed">
+            {isCopied
+              ? "Click below to open your cart and paste the code"
+              : "Click to copy your discount code to clipboard"}
+          </p>
         </div>
       </div>
     )
