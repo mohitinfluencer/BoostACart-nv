@@ -1,16 +1,45 @@
-import { Suspense } from "react"
-import EmbedWidgetContent from "./embed-widget-content"
+"use client"
+
+import { useParams, useSearchParams } from "next/navigation"
+import { useEffect } from "react"
 
 export default function EmbedWidget() {
-  return (
-    <Suspense
-      fallback={
-        <div className="fixed inset-0 bg-slate-900 flex items-center justify-center">
-          <div className="text-white">Loading...</div>
-        </div>
+  const params = useParams()
+  const searchParams = useSearchParams()
+
+  const shop = params.shop as string
+  const productId = searchParams.get("product_id") || ""
+  const productTitle = searchParams.get("product_title") || ""
+
+  const widgetUrl = new URL(`https://boostacart-beta-v1.vercel.app/widget/${shop}`)
+  if (productId) widgetUrl.searchParams.set("product_id", productId)
+  if (productTitle) widgetUrl.searchParams.set("product_title", productTitle)
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === "BOOSTACART_CLOSE") {
+        // Forward close message to parent (Shopify store)
+        window.parent.postMessage({ type: "BOOSTACART_CLOSE" }, "*")
       }
-    >
-      <EmbedWidgetContent />
-    </Suspense>
+    }
+
+    window.addEventListener("message", handleMessage)
+    return () => window.removeEventListener("message", handleMessage)
+  }, [])
+
+  return (
+    <iframe
+      src={widgetUrl.toString()}
+      className="fixed inset-0 w-full h-full border-0"
+      style={{
+        width: "100vw",
+        height: "100vh",
+        border: "none",
+        margin: 0,
+        padding: 0,
+      }}
+      title="BoostACart Widget"
+      allow="clipboard-write"
+    />
   )
 }
