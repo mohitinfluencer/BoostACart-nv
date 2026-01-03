@@ -45,10 +45,10 @@ export default function WidgetPage({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
-  const [isRedirecting, setIsRedirecting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [detectedProduct, setDetectedProduct] = useState<string>("")
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false)
 
   useEffect(() => {
     const loadStore = async () => {
@@ -246,28 +246,28 @@ export default function WidgetPage({
     }
   }
 
-  const handleCopyCode = async () => {
-    if (!store?.widgetSettings.discountCode || isCopied) return
+  const handleCopyAndOpenCart = async () => {
+    if (!store?.widgetSettings.discountCode || isButtonDisabled) return
 
     try {
+      // Copy code to clipboard
       await navigator.clipboard.writeText(store.widgetSettings.discountCode)
       setIsCopied(true)
+      setIsButtonDisabled(true)
       console.log("[v0] Code copied successfully")
 
-      setTimeout(() => {
-        const parentOrigin = document.referrer ? new URL(document.referrer).origin : "*"
-        console.log("[v0] Sending BOOSTACART_GO_TO_CART to parent origin:", parentOrigin)
+      // Open cart in new tab using fully qualified URL
+      const cartUrl = store.shopify_domain ? `https://${store.shopify_domain}/cart` : "/cart"
+      console.log("[v0] Opening cart in new tab:", cartUrl)
+      window.open(cartUrl, "_blank")
 
-        window.parent.postMessage(
-          {
-            type: "BOOSTACART_GO_TO_CART",
-            cartUrl: "/cart",
-          },
-          parentOrigin,
-        )
-      }, 500)
+      // Re-enable button after 1.5 seconds
+      setTimeout(() => {
+        setIsButtonDisabled(false)
+      }, 1500)
     } catch (err) {
       console.error("[v0] Failed to copy code:", err)
+      setIsButtonDisabled(false)
     }
   }
 
@@ -337,11 +337,13 @@ export default function WidgetPage({
           )}
 
           <h2 id="success-title" className="text-2xl font-bold mb-2">
-            {isCopied ? "Code copied successfully" : "Coupon Ready!"}
+            {isCopied ? "Code Copied!" : "Coupon Ready!"}
           </h2>
 
           <p id="success-description" className="text-sm opacity-90 mb-6">
-            {isCopied ? "Redirecting you to cart..." : "Your discount code has been generated"}
+            {isCopied
+              ? "Coupon copied. A new tab has been opened for your cart."
+              : "Your discount code is ready to use"}
           </p>
 
           <div
@@ -354,40 +356,20 @@ export default function WidgetPage({
           </div>
 
           <button
-            onClick={handleCopyCode}
-            disabled={isCopied}
-            className="w-full py-4 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 disabled:opacity-90 disabled:cursor-not-allowed focus:outline-none focus:ring-4 focus:ring-opacity-50 mb-3"
+            onClick={handleCopyAndOpenCart}
+            disabled={isButtonDisabled}
+            className="w-full py-4 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-4 focus:ring-opacity-50 mb-3"
             style={{
               backgroundColor: isCopied ? "#10b981" : store.widgetSettings.buttonColor,
               boxShadow: "0 4px 14px 0 rgba(0, 0, 0, 0.2)",
             }}
-            aria-label={isCopied ? "Code copied, redirecting to cart" : "Copy code and go to cart"}
+            aria-label={isCopied ? "Code copied" : "Copy code and go to cart"}
           >
-            {isCopied ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg
-                  className="animate-spin h-5 w-5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Redirecting...
-              </span>
-            ) : (
-              "Copy Code & Go to Cart"
-            )}
+            {isCopied ? "Code Copied!" : "Copy Code & Go to Cart"}
           </button>
 
           <p className="text-xs opacity-75 leading-relaxed mt-4">
-            {isCopied ? "Taking you to checkout now" : "Click to copy and continue shopping"}
+            {isCopied ? "Paste the code at checkout to apply your discount" : "Click to copy code and open cart"}
           </p>
         </div>
       </div>
