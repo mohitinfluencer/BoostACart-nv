@@ -239,39 +239,45 @@ export default function WidgetCustomization({ store, onUpdateWidget }: WidgetCus
                 placeholder="SAVE20"
               />
             </div>
-            <div className="flex items-center justify-between mb-2">
-              <label htmlFor="showCouponPage" className="text-sm font-medium text-gray-300">
-                Show Coupon Page
-              </label>
-              <Switch
-                id="showCouponPage"
-                checked={showCouponPage}
-                onCheckedChange={(checked) => handleSwitchChange("showCouponPage", checked)}
-                variant="success"
-              />
-            </div>
-            <p className="text-xs text-gray-400">Display discount code page after form submission</p>
-            <div className="text-xs text-gray-400 bg-white/5 p-3 rounded-lg">
-              <strong>How it works:</strong>
-              <ul className="mt-1 space-y-1">
-                <li>
-                  • <strong>Enabled:</strong> User fills form → sees coupon page → copies code → redirects to cart
-                </li>
-                <li>
-                  • <strong>Disabled:</strong> User fills form → redirects directly to cart/redirect URL
-                </li>
-              </ul>
-            </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Redirect URL (optional)</label>
+              <label htmlFor="redirectUrl" className="block text-sm font-medium text-gray-300 mb-2">
+                Redirect URL (optional)
+              </label>
               <input
-                type="url"
+                type="text"
+                id="redirectUrl"
                 value={settings.redirectUrl || ""}
-                onChange={(e) => updateSetting("redirectUrl", e.target.value)}
-                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-white placeholder-gray-400 backdrop-blur-sm"
-                placeholder={`https://${store.domain}/cart`}
+                onChange={(e) => {
+                  const url = e.target.value.trim()
+                  // Only validate if user has entered something
+                  if (url && !url.startsWith("https://")) {
+                    // Show validation error by adding red border
+                    e.target.classList.add("border-red-500")
+                    e.target.classList.remove("border-white/20")
+                  } else {
+                    // Remove error state
+                    e.target.classList.remove("border-red-500")
+                    e.target.classList.add("border-white/20")
+                  }
+                  updateSetting("redirectUrl", url)
+                }}
+                className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-300"
+                placeholder="https://yourstore.com/cart"
               />
-              <p className="text-xs text-gray-400 mt-1">Leave empty to redirect to {store.domain}/cart</p>
+              {settings.redirectUrl && !settings.redirectUrl.startsWith("https://") && (
+                <p className="text-xs text-red-400 mt-1">Please enter a valid full URL starting with https://</p>
+              )}
+              <div className="mt-2 text-xs text-gray-400 space-y-1">
+                <p>Redirect URL must be a full URL including https://</p>
+                <p className="mt-1">
+                  <strong>Examples:</strong>
+                </p>
+                <ul className="ml-4 space-y-0.5">
+                  <li>https://yourstore.com/cart</li>
+                  <li>https://yourstore.myshopify.com/cart</li>
+                </ul>
+                <p className="mt-1">Leave empty to automatically redirect to your store's default cart page.</p>
+              </div>
             </div>
           </div>
         </div>
