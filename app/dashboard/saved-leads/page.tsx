@@ -35,9 +35,16 @@ export default function SavedLeadsPage() {
           return
         }
 
-        const { data: storeData } = await supabase.from("stores").select("id").eq("user_id", user.id).limit(1).single()
+        const { data: storeResults } = await supabase.from("stores").select("id").eq("user_id", user.id).limit(1)
 
-        if (!storeData) return
+        console.log("[v0] Store lookup returned:", storeResults?.length || 0, "rows")
+
+        if (!storeResults || storeResults.length === 0) {
+          console.log("[v0] No store found for user")
+          return
+        }
+
+        const storeData = storeResults[0]
 
         const { data: savedLeadsData, error } = await supabase
           .from("saved_leads")

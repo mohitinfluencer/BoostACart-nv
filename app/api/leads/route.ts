@@ -10,7 +10,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Use service role to bypass RLS
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
       auth: {
         autoRefreshToken: false,
@@ -33,14 +32,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to save lead" }, { status: 500 })
     }
 
-    // Update store counters
-    const { data: store } = await supabase
+    const { data: storeResults } = await supabase
       .from("stores")
       .select("total_leads, leads_this_month, remaining_leads")
       .eq("id", store_id)
-      .single()
+      .limit(1)
 
-    if (store) {
+    console.log("[API] Store lookup returned:", storeResults?.length || 0, "rows")
+
+    if (storeResults && storeResults.length > 0) {
+      const store = storeResults[0]
       await supabase
         .from("stores")
         .update({
@@ -49,6 +50,8 @@ export async function POST(request: Request) {
           remaining_leads: Math.max((store.remaining_leads || 0) - 1, 0),
         })
         .eq("id", store_id)
+    } else {
+      console.log("[API] Store not found for id:", store_id)
     }
 
     return NextResponse.json({ success: true })

@@ -1,6 +1,4 @@
 "use client"
-
-import type React from "react"
 import { useState, useEffect } from "react"
 import { Mail, Phone, Gift, Settings } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
@@ -12,7 +10,7 @@ interface WidgetCustomizationProps {
   onUpdateWidget: (settings: Partial<WidgetSettings>) => void
 }
 
-const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpdateWidget }) => {
+export default function WidgetCustomization({ store, onUpdateWidget }: WidgetCustomizationProps) {
   const supabase = createClient()
   const [settings, setSettings] = useState<WidgetSettings>(store.widgetSettings)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
@@ -70,7 +68,7 @@ const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpda
     setHasUnsavedChanges(false)
   }
 
-  const widgetUrl = `${window.location.origin}/widget/${store.domain}`
+  const widgetUrl = `${window.location.origin}/widget/${store.shopify_domain || store.domain}`
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -479,5 +477,3 @@ const WidgetCustomization: React.FC<WidgetCustomizationProps> = ({ store, onUpda
     </div>
   )
 }
-
-export default WidgetCustomization

@@ -12,6 +12,7 @@ interface Store {
   id: string
   name: string
   domain: string
+  shopify_domain?: string
   user_id: string
   plan: string
   max_leads?: number
@@ -73,7 +74,7 @@ export default function Dashboard() {
 
         const { data: storeData, error: storeError } = await supabase
           .from("stores")
-          .select("*")
+          .select("id, name, domain, shopify_domain, user_id, plan, max_leads, remaining_leads, total_leads")
           .eq("user_id", user.id)
           .limit(1)
 

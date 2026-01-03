@@ -2,6 +2,7 @@ export interface Store {
   id: string
   name: string
   domain: string
+  shopify_domain?: string
   plan: "Free" | "Starter" | "Pro"
   totalLeads: number
   leadsThisMonth: number
