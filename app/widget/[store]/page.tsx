@@ -30,7 +30,7 @@ interface Store {
   widgetSettings: WidgetSettings
 }
 
-export default async function WidgetPage({
+export default function WidgetPage({
   params,
   searchParams,
 }: {
@@ -148,6 +148,8 @@ export default async function WidgetPage({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    e.stopPropagation()
+
     if (!store) return
 
     console.log("[v0] Form submission started")
@@ -242,10 +244,14 @@ export default async function WidgetPage({
     if (store?.widgetSettings.discountCode) {
       navigator.clipboard.writeText(store.widgetSettings.discountCode)
 
-      if (store.widgetSettings.redirectUrl) {
-        window.location.href = store.widgetSettings.redirectUrl
-      } else {
-        window.location.href = `https://${store.domain}/cart`
+      try {
+        if (store.widgetSettings.redirectUrl) {
+          window.location.href = store.widgetSettings.redirectUrl
+        } else {
+          window.location.href = `https://${store.domain}/cart`
+        }
+      } catch (err) {
+        console.error("[v0] Redirect error:", err)
       }
     }
   }
@@ -332,7 +338,7 @@ export default async function WidgetPage({
         <h3 className="text-xl font-bold mb-2">{store.widgetSettings.heading}</h3>
         <p className="text-sm mb-6 opacity-90">{store.widgetSettings.description}</p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div>
             <label className="block text-sm font-medium mb-2">Name *</label>
             <input
