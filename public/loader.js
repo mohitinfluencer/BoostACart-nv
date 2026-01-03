@@ -100,11 +100,25 @@
     },
   }
 
-  // Listen for postMessage from iframe to close
   window.addEventListener("message", (event) => {
-    // Accept messages from any origin for flexibility
+    // Accept messages from BOOSTACART_DOMAIN for security
+    if (event.origin !== BOOSTACART_DOMAIN) {
+      return
+    }
+
     if (event.data && event.data.type === "BOOSTACART_CLOSE") {
       window.BoostACart.close()
+    }
+
+    if (event.data && event.data.type === "BOOSTACART_GO_TO_CART") {
+      var cartUrl = event.data.cartUrl || "/cart"
+      console.log("[BoostACart] Navigating to cart:", cartUrl)
+
+      // Close the widget first
+      window.BoostACart.close()
+
+      // Navigate to cart URL
+      window.location.href = cartUrl
     }
   })
 

@@ -226,11 +226,15 @@ export default function WidgetPage({
       if (store.widgetSettings.showCouponPage) {
         setIsSubmitted(true)
       } else {
-        if (store.widgetSettings.redirectUrl) {
-          window.location.href = store.widgetSettings.redirectUrl
-        } else {
-          window.location.href = `https://${store.domain}/cart`
-        }
+        // Request navigation via parent window
+        const cartUrl = store.widgetSettings.redirectUrl || `https://${store.domain}/cart`
+        window.parent.postMessage(
+          {
+            type: "BOOSTACART_GO_TO_CART",
+            cartUrl: cartUrl,
+          },
+          "*",
+        )
       }
     } catch (err) {
       console.error("Failed to submit lead:", err)
@@ -244,15 +248,15 @@ export default function WidgetPage({
     if (store?.widgetSettings.discountCode) {
       navigator.clipboard.writeText(store.widgetSettings.discountCode)
 
-      try {
-        if (store.widgetSettings.redirectUrl) {
-          window.location.href = store.widgetSettings.redirectUrl
-        } else {
-          window.location.href = `https://${store.domain}/cart`
-        }
-      } catch (err) {
-        console.error("[v0] Redirect error:", err)
-      }
+      // Request navigation via parent window
+      const cartUrl = store.widgetSettings.redirectUrl || `https://${store.domain}/cart`
+      window.parent.postMessage(
+        {
+          type: "BOOSTACART_GO_TO_CART",
+          cartUrl: cartUrl,
+        },
+        "*",
+      )
     }
   }
 
