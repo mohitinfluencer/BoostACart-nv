@@ -43,6 +43,8 @@ export default function WidgetPage({
   const [formData, setFormData] = useState({ name: "", phone: "", email: "" })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isCopied, setIsCopied] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [detectedProduct, setDetectedProduct] = useState<string>("")
@@ -242,11 +244,32 @@ export default function WidgetPage({
     }
   }
 
-  const handleCopyCode = () => {
-    if (store?.widgetSettings.discountCode) {
-      navigator.clipboard.writeText(store.widgetSettings.discountCode)
+  const handleCopyCode = async () => {
+    if (!store?.widgetSettings.discountCode || isRedirecting) return
 
-      console.log("[v0] Sending navigation request to parent")
+    try {
+      // Copy to clipboard
+      await navigator.clipboard.writeText(store.widgetSettings.discountCode)
+
+      // Show copied feedback
+      setIsCopied(true)
+      setIsRedirecting(true)
+
+      console.log("[v0] Code copied successfully, preparing to redirect")
+
+      // Small delay for user to see the "Copied!" message
+      setTimeout(() => {
+        console.log("[v0] Sending navigation request to parent")
+        window.parent.postMessage(
+          {
+            type: "BOOSTACART_GO_TO_CART",
+          },
+          "*",
+        )
+      }, 800)
+    } catch (err) {
+      console.error("[v0] Failed to copy code:", err)
+      // Fallback: still send navigation message even if copy fails
       window.parent.postMessage(
         {
           type: "BOOSTACART_GO_TO_CART",
@@ -294,30 +317,86 @@ export default function WidgetPage({
   if (isSubmitted) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center"
+        className="min-h-screen flex items-center justify-center p-4"
         style={{ backgroundColor: `rgba(0, 0, 0, ${store.widgetSettings.overlayOpacity})` }}
       >
         <div
-          className="max-w-md w-full mx-4 p-6 rounded-lg shadow-xl text-center"
+          className="max-w-md w-full p-8 rounded-2xl shadow-2xl text-center"
           style={{
             backgroundColor: store.widgetSettings.backgroundColor,
             color: store.widgetSettings.textColor,
           }}
+          role="dialog"
+          aria-labelledby="success-title"
+          aria-describedby="success-description"
         >
-          <div className="text-4xl mb-4">🎉</div>
-          <h3 className="text-xl font-bold mb-2">Thank You!</h3>
-          <p className="text-sm opacity-90 mb-4">Your exclusive discount code:</p>
-          <div className="bg-green-100 text-green-800 p-3 rounded-lg font-mono text-lg font-bold mb-4">
-            {store.widgetSettings.discountCode}
+          {/* Success Icon */}
+          <div className="text-5xl mb-4 animate-bounce" aria-hidden="true">
+            🎉
           </div>
+
+          {/* Title */}
+          <h2 id="success-title" className="text-2xl font-bold mb-2">
+            Thank You!
+          </h2>
+
+          {/* Subtitle */}
+          <p id="success-description" className="text-sm opacity-90 mb-6">
+            Your exclusive discount code:
+          </p>
+
+          {/* Discount Code Display */}
+          <div
+            className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 p-4 rounded-xl mb-6"
+            aria-live="polite"
+          >
+            <div className="text-green-800 font-mono text-2xl font-bold tracking-wider">
+              {store.widgetSettings.discountCode}
+            </div>
+          </div>
+
+          {/* Copy & Redirect Button */}
           <button
             onClick={handleCopyCode}
-            className="w-full py-3 rounded-lg font-medium text-white transition-colors mb-2"
-            style={{ backgroundColor: store.widgetSettings.buttonColor }}
+            disabled={isRedirecting}
+            className="w-full py-4 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none focus:outline-none focus:ring-4 focus:ring-opacity-50 mb-3"
+            style={{
+              backgroundColor: store.widgetSettings.buttonColor,
+              boxShadow: isRedirecting ? "none" : "0 4px 14px 0 rgba(0, 0, 0, 0.2)",
+            }}
+            aria-label={isCopied ? "Code copied, redirecting to cart" : "Copy discount code and go to cart"}
           >
-            Copy Code & Go to Cart
+            {isRedirecting ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg
+                  className="animate-spin h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                {isCopied ? "Copied! Redirecting..." : "Redirecting..."}
+              </span>
+            ) : (
+              "Copy Code & Go to Cart"
+            )}
           </button>
-          <p className="text-xs opacity-75">Click to copy the code and continue shopping</p>
+
+          {/* Success Message */}
+          {isCopied && (
+            <div className="text-green-600 text-sm font-medium mb-2 animate-pulse" role="status" aria-live="polite">
+              ✓ Code copied to clipboard!
+            </div>
+          )}
+
+          {/* Helper Text */}
+          <p className="text-xs opacity-75 leading-relaxed">Click to copy the code and continue shopping</p>
         </div>
       </div>
     )
