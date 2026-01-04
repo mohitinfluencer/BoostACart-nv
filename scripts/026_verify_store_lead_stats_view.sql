@@ -1,0 +1,43 @@
+-- This script documents the store_lead_stats VIEW that provides real-time lead statistics
+-- The VIEW already exists in the database and calculates all metrics from the leads table
+
+-- View Definition (already exists):
+-- CREATE OR REPLACE VIEW public.store_lead_stats AS
+-- SELECT
+--   s.id AS store_id,
+--   s.name AS store_name,
+--   s.plan,
+--   s.max_leads,
+--   
+--   -- Real-time counts from leads table
+--   COUNT(l.id) AS total_leads,
+--   
+--   COUNT(CASE 
+--     WHEN date_trunc('month', l.created_at) = date_trunc('month', now()) 
+--     THEN 1 
+--   END) AS leads_this_month,
+--   
+--   COUNT(CASE 
+--     WHEN date_trunc('day', l.created_at) = date_trunc('day', now()) 
+--     THEN 1 
+--   END) AS leads_today,
+--   
+--   -- Remaining leads based on monthly usage
+--   GREATEST(s.max_leads - COUNT(CASE 
+--     WHEN date_trunc('month', l.created_at) = date_trunc('month', now()) 
+--     THEN 1 
+--   END), 0) AS remaining_leads
+--   
+-- FROM public.stores s
+-- LEFT JOIN public.leads l ON l.store_id = s.id
+-- GROUP BY s.id, s.name, s.plan, s.max_leads;
+
+-- Benefits:
+-- 1. All metrics calculated in real-time from leads table
+-- 2. No manual counter updates needed
+-- 3. Remaining leads based on monthly usage (resets each month)
+-- 4. Guaranteed data accuracy
+-- 5. Single source of truth
+
+-- Usage:
+-- SELECT * FROM store_lead_stats WHERE store_id = 'your-store-id';

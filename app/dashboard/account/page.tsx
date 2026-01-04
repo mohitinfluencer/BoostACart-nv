@@ -41,51 +41,78 @@ export default function AccountPage() {
 
         setUser(user)
 
-        const { data: storeData, error: storeError } = await supabase
-          .from("stores")
-          .select("id, name, domain, user_id, plan, max_leads, store_slug")
+        const { data: statsData, error: statsError } = await supabase
+          .from("store_lead_stats")
+          .select("*")
           .eq("user_id", user.id)
           .limit(1)
+          .maybeSingle()
 
-        if (storeError) {
-          console.error("Error loading store:", storeError)
-          return
+        if (statsError || !statsData) {
+          console.error("Error loading store stats:", statsError)
+          // Fallback to stores table
+          const { data: storeData, error: storeError } = await supabase
+            .from("stores")
+            .select("id, name, domain, user_id, plan, max_leads, store_slug")
+            .eq("user_id", user.id)
+            .limit(1)
+
+          if (storeError) {
+            console.error("Error loading store:", storeError)
+            return
+          }
+
+          if (!storeData || storeData.length === 0) {
+            console.log("No store found for user")
+            setLoading(false)
+            return
+          }
+
+          const storeRecord = storeData[0]
+
+          const { count: totalLeadsCount } = await supabase
+            .from("leads")
+            .select("*", { count: "exact", head: true })
+            .eq("store_id", storeRecord.id)
+
+          const { count: monthLeadsCount } = await supabase
+            .from("leads")
+            .select("*", { count: "exact", head: true })
+            .eq("store_id", storeRecord.id)
+            .gte("created_at", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
+
+          const total_leads = totalLeadsCount || 0
+          const leads_this_month = monthLeadsCount || 0
+
+          const max_leads = storeRecord.max_leads || 50
+          const remaining_leads = Math.max(max_leads - leads_this_month, 0)
+
+          const store = {
+            ...storeRecord,
+            total_leads,
+            leads_this_month,
+            remaining_leads,
+            max_leads,
+          }
+
+          setStore(store)
+        } else {
+          // Use data from store_lead_stats VIEW
+          const store = {
+            id: statsData.store_id,
+            name: statsData.store_name,
+            domain: statsData.domain,
+            user_id: user.id,
+            plan: statsData.plan,
+            total_leads: statsData.total_leads,
+            leads_this_month: statsData.leads_this_month,
+            remaining_leads: statsData.remaining_leads,
+            max_leads: statsData.max_leads,
+            store_slug: statsData.store_name.toLowerCase().replace(/\s+/g, "-"),
+          }
+
+          setStore(store)
         }
-
-        if (!storeData || storeData.length === 0) {
-          console.log("No store found for user")
-          setLoading(false)
-          return
-        }
-
-        const storeRecord = storeData[0]
-
-        const { count: totalLeadsCount } = await supabase
-          .from("leads")
-          .select("*", { count: "exact", head: true })
-          .eq("store_id", storeRecord.id)
-
-        const { count: monthLeadsCount } = await supabase
-          .from("leads")
-          .select("*", { count: "exact", head: true })
-          .eq("store_id", storeRecord.id)
-          .gte("created_at", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
-
-        const total_leads = totalLeadsCount || 0
-        const leads_this_month = monthLeadsCount || 0
-
-        const max_leads = storeRecord.max_leads || 50
-        const remaining_leads = Math.max(max_leads - leads_this_month, 0)
-
-        const store = {
-          ...storeRecord,
-          total_leads,
-          leads_this_month,
-          remaining_leads,
-          max_leads,
-        }
-
-        setStore(store)
       } catch (err) {
         console.error("Error loading account:", err)
       } finally {

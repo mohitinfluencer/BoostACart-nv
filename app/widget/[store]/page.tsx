@@ -55,78 +55,132 @@ export default function WidgetPage({
       try {
         console.log("[v0] Looking for store with shopify_domain:", shopifyDomain)
 
-        const { data: storeResults, error: storeError } = await supabase
-          .from("stores")
-          .select(`
-            id,
-            name,
-            domain,
-            shopify_domain,
-            store_slug,
-            plan,
-            remaining_leads,
-            max_leads,
-            widget_settings (
-              heading,
-              description,
-              button_text,
-              background_color,
-              text_color,
-              button_color,
-              overlay_opacity,
-              is_active,
-              show_email,
-              show_phone,
-              discount_code,
-              redirect_url,
-              show_coupon_page
-            )
-          `)
+        const { data: statsData, error: statsError } = await supabase
+          .from("store_lead_stats")
+          .select("*")
           .eq("shopify_domain", shopifyDomain)
-          .limit(1)
+          .maybeSingle()
 
-        console.log("[v0] Store lookup returned:", storeResults?.length || 0, "rows")
+        if (!statsError && statsData) {
+          console.log("[v0] ✅ Found store from store_lead_stats:", statsData.store_name)
 
-        if (storeError) {
-          console.error("[v0] Store lookup error:", storeError)
-        }
+          const { data: settingsData } = await supabase
+            .from("widget_settings")
+            .select("*")
+            .eq("store_id", statsData.store_id)
+            .maybeSingle()
 
-        if (!storeResults || storeResults.length === 0) {
-          console.log("[v0] ❌ Store not found for shopify_domain:", shopifyDomain)
-          setError("Store not found")
-          setLoading(false)
-          return
-        }
+          if (settingsData) {
+            setStore({
+              id: statsData.store_id,
+              name: statsData.store_name,
+              domain: statsData.domain,
+              shopify_domain: statsData.shopify_domain || statsData.domain,
+              plan: statsData.plan || "Free",
+              remainingLeads: statsData.remaining_leads,
+              maxLeads: statsData.max_leads,
+              widgetSettings: {
+                heading: settingsData.heading || "Get Exclusive Discount!",
+                description: settingsData.description || "Leave your details and get 20% off your next order",
+                buttonText: settingsData.button_text || "Get My Discount",
+                backgroundColor: settingsData.background_color || "#ffffff",
+                textColor: settingsData.text_color || "#1f2937",
+                buttonColor: settingsData.button_color || "#3b82f6",
+                overlayOpacity: settingsData.overlay_opacity || 0.8,
+                isActive: settingsData.is_active !== false,
+                showEmail: settingsData.show_email !== false,
+                showPhone: settingsData.show_phone === true,
+                discountCode: settingsData.discount_code || "SAVE20",
+                redirectUrl: settingsData.redirect_url,
+                showCouponPage: settingsData.show_coupon_page !== false,
+              },
+            })
+          }
+        } else {
+          const { data: storeResults, error: storeError } = await supabase
+            .from("stores")
+            .select(`
+              id,
+              name,
+              domain,
+              shopify_domain,
+              store_slug,
+              plan,
+              max_leads,
+              widget_settings (
+                heading,
+                description,
+                button_text,
+                background_color,
+                text_color,
+                button_color,
+                overlay_opacity,
+                is_active,
+                show_email,
+                show_phone,
+                discount_code,
+                redirect_url,
+                show_coupon_page
+              )
+            `)
+            .eq("shopify_domain", shopifyDomain)
+            .limit(1)
 
-        const storeData = storeResults[0]
-        console.log("[v0] ✅ Found store:", storeData.name)
+          console.log("[v0] Store lookup returned:", storeResults?.length || 0, "rows")
 
-        if (storeData && storeData.widget_settings) {
-          const settings = storeData.widget_settings
-          setStore({
-            id: storeData.id,
-            name: storeData.name,
-            domain: storeData.domain,
-            shopify_domain: storeData.shopify_domain || storeData.domain,
-            plan: storeData.plan || "Free",
-            remainingLeads: storeData.remaining_leads || 0,
-            maxLeads: storeData.max_leads || 100,
-            widgetSettings: {
-              heading: settings.heading || "Get Exclusive Discount!",
-              description: settings.description || "Leave your details and get 20% off your next order",
-              buttonText: settings.button_text || "Get My Discount",
-              backgroundColor: settings.background_color || "#ffffff",
-              textColor: settings.text_color || "#1f2937",
-              buttonColor: settings.button_color || "#3b82f6",
-              overlayOpacity: settings.overlay_opacity || 0.8,
-              isActive: settings.is_active !== false,
-              showEmail: settings.show_email !== false,
-              showPhone: settings.show_phone === true,
-              discountCode: settings.discount_code || "SAVE20",
-              redirectUrl: settings.redirect_url,
-              showCouponPage: settings.show_coupon_page !== false,
-            },
-          })
+          if (storeError) {
+            console.error("[v0] Store lookup error:", storeError)
+          }
+
+          if (!storeResults || storeResults.length === 0) {
+            console.log("[v0] ❌ Store not found for shopify_domain:", shopifyDomain)
+            setError("Store not found")
+            setLoading(false)
+            return
+          }
+
+          const storeData = storeResults[0]
+          console.log("[v0] ✅ Found store:", storeData.name)
+
+          const { count: monthLeadsCount } = await supabase
+            .from("leads")
+            .select("*", { count: "exact", head: true })
+            .eq("store_id", storeData.id)
+            .gte("created_at", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
+
+          const leads_this_month = monthLeadsCount || 0
+          const max_leads = storeData.max_leads || 50
+          const remainingLeads = Math.max(max_leads - leads_this_month, 0)
+
+          console.log("[v0] Lead limits - Used:", leads_this_month, "Max:", max_leads, "Remaining:", remainingLeads)
+
+          if (storeData && storeData.widget_settings) {
+            const settings = storeData.widget_settings
+            setStore({
+              id: storeData.id,
+              name: storeData.name,
+              domain: storeData.domain,
+              shopify_domain: storeData.shopify_domain || storeData.domain,
+              plan: storeData.plan || "Free",
+              remainingLeads,
+              maxLeads: max_leads,
+              widgetSettings: {
+                heading: settings.heading || "Get Exclusive Discount!",
+                description: settings.description || "Leave your details and get 20% off your next order",
+                buttonText: settings.button_text || "Get My Discount",
+                backgroundColor: settings.background_color || "#ffffff",
+                textColor: settings.text_color || "#1f2937",
+                buttonColor: settings.button_color || "#3b82f6",
+                overlayOpacity: settings.overlay_opacity || 0.8,
+                isActive: settings.is_active !== false,
+                showEmail: settings.show_email !== false,
+                showPhone: settings.show_phone === true,
+                discountCode: settings.discount_code || "SAVE20",
+                redirectUrl: settings.redirect_url,
+                showCouponPage: settings.show_coupon_page !== false,
+              },
+            })
+          }
         }
       } catch (err) {
         console.error("[v0] Error loading store:", err)

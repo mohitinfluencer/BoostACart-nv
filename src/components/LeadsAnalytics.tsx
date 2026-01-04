@@ -18,6 +18,11 @@ const LeadsAnalytics: React.FC<LeadsAnalyticsProps> = ({ store, leads: initialLe
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle")
   const [leads, setLeads] = useState<any[]>(initialLeads || [])
   const [loading, setLoading] = useState(true)
+  const [metrics, setMetrics] = useState({
+    totalLeads: 0,
+    leadsThisMonth: 0,
+    leadsToday: 0,
+  })
   const supabase = createClient()
 
   useEffect(() => {
@@ -25,6 +30,26 @@ const LeadsAnalytics: React.FC<LeadsAnalyticsProps> = ({ store, leads: initialLe
       if (!store?.id) return
 
       try {
+        const { data: statsData, error: statsError } = await supabase
+          .from("store_lead_stats")
+          .select("total_leads, leads_this_month, leads_today")
+          .eq("store_id", store.id)
+          .maybeSingle()
+
+        if (!statsError && statsData) {
+          setMetrics({
+            totalLeads: statsData.total_leads || 0,
+            leadsThisMonth: statsData.leads_this_month || 0,
+            leadsToday: statsData.leads_today || 0,
+          })
+        } else {
+          setMetrics({
+            totalLeads: store.total_leads || 0,
+            leadsThisMonth: store.leads_this_month || 0,
+            leadsToday: 0,
+          })
+        }
+
         const { data: leadsData, error } = await supabase
           .from("leads")
           .select("*")
@@ -80,9 +105,9 @@ const LeadsAnalytics: React.FC<LeadsAnalyticsProps> = ({ store, leads: initialLe
   const today = now.toISOString().split("T")[0]
   const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
 
-  const totalLeads = leads.length
-  const todayLeads = leads.filter((lead) => lead.created_at?.startsWith(today)).length
-  const thisMonthLeads = leads.filter((lead) => lead.created_at?.startsWith(thisMonth)).length
+  const totalLeads = metrics.totalLeads
+  const todayLeads = metrics.leadsToday
+  const thisMonthLeads = metrics.leadsThisMonth
 
   const chartData = Array.from({ length: 7 }, (_, i) => {
     const date = new Date()

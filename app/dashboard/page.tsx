@@ -78,94 +78,108 @@ export default function Dashboard() {
           .select("id, name, domain, shopify_domain, user_id, plan, max_leads")
           .eq("user_id", user.id)
           .limit(1)
+          .maybeSingle()
 
-        if (storeError) {
-          console.error("Error loading store:", storeError)
-          return
-        }
-
-        if (!storeData || storeData.length === 0) {
+        if (storeError || !storeData) {
           console.log("No store found for user")
           setLoading(false)
           return
         }
 
-        const storeRecord = storeData[0]
-
-        const { count: totalLeadsCount } = await supabase
-          .from("leads")
-          .select("*", { count: "exact", head: true })
-          .eq("store_id", storeRecord.id)
-
-        const { count: monthLeadsCount } = await supabase
-          .from("leads")
-          .select("*", { count: "exact", head: true })
-          .eq("store_id", storeRecord.id)
-          .gte("created_at", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
-
-        const total_leads = totalLeadsCount || 0
-        const leads_this_month = monthLeadsCount || 0
-
-        let max_leads = storeRecord.max_leads
-        let needsUpdate = false
-        const updates: any = {}
-
-        if (storeRecord.plan === "Free" && max_leads !== 50) {
-          updates.max_leads = 50
-          max_leads = 50
-          needsUpdate = true
-        } else if (storeRecord.plan === "Starter" && max_leads !== 600) {
-          updates.max_leads = 600
-          max_leads = 600
-          needsUpdate = true
-        } else if (storeRecord.plan === "Pro" && max_leads !== 999999) {
-          updates.max_leads = 999999
-          max_leads = 999999
-          needsUpdate = true
-        }
-
-        if (needsUpdate) {
-          await supabase.from("stores").update(updates).eq("id", storeRecord.id)
-        }
-
-        const remaining_leads = Math.max(max_leads - total_leads, 0)
-
-        const store = {
-          ...storeRecord,
-          max_leads,
-          total_leads,
-          leads_this_month,
-          remaining_leads,
-        }
-
-        setStore(store)
-
-        const { data: settingsData, error: settingsError } = await supabase
-          .from("widget_settings")
+        const { data: statsData, error: statsError } = await supabase
+          .from("store_lead_stats")
           .select("*")
-          .eq("store_id", store.id)
+          .eq("store_id", storeData.id)
+          .limit(1)
           .maybeSingle()
 
-        if (settingsError) {
-          console.error("Error loading widget settings:", settingsError)
-        }
+        if (statsError) {
+          console.error("Error loading store stats:", statsError)
+          // Fallback to manual calculation
+          const { count: totalLeadsCount } = await supabase
+            .from("leads")
+            .select("*", { count: "exact", head: true })
+            .eq("store_id", storeData.id)
 
-        if (settingsData) {
-          setWidgetSettings({
-            heading: settingsData.heading || "Get Exclusive Discount!",
-            description: settingsData.description || "Leave your details and get 20% off your next order",
-            buttonText: settingsData.button_text || "Get My Discount",
-            backgroundColor: settingsData.background_color || "#ffffff",
-            textColor: settingsData.text_color || "#1f2937",
-            buttonColor: settingsData.button_color || "#3b82f6",
-            overlayOpacity: settingsData.overlay_opacity || 0.8,
-            isActive: settingsData.is_active !== false,
-            showEmail: settingsData.show_email || false,
-            showPhone: settingsData.show_phone !== false,
-            discountCode: settingsData.discount_code || "SAVE20",
-            redirectUrl: settingsData.redirect_url,
-            showCouponPage: settingsData.show_coupon_page !== false,
-          })
+          const { count: monthLeadsCount } = await supabase
+            .from("leads")
+            .select("*", { count: "exact", head: true })
+            .eq("store_id", storeData.id)
+            .gte("created_at", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
+
+          const total_leads = totalLeadsCount || 0
+          const leads_this_month = monthLeadsCount || 0
+
+          let max_leads = storeData.max_leads
+          let needsUpdate = false
+          const updates: any = {}
+
+          if (storeData.plan === "Free" && max_leads !== 50) {
+            updates.max_leads = 50
+            max_leads = 50
+            needsUpdate = true
+          } else if (storeData.plan === "Starter" && max_leads !== 600) {
+            updates.max_leads = 600
+            max_leads = 600
+            needsUpdate = true
+          } else if (storeData.plan === "Pro" && max_leads !== 999999) {
+            updates.max_leads = 999999
+            max_leads = 999999
+            needsUpdate = true
+          }
+
+          if (needsUpdate) {
+            await supabase.from("stores").update(updates).eq("id", storeData.id)
+          }
+
+          const remaining_leads = Math.max(max_leads - leads_this_month, 0)
+
+          const store = {
+            ...storeData,
+            max_leads,
+            total_leads,
+            leads_this_month,
+            remaining_leads,
+          }
+
+          setStore(store)
+        } else if (statsData) {
+          let max_leads = statsData.max_leads
+          let needsUpdate = false
+          const updates: any = {}
+
+          if (statsData.plan === "Free" && max_leads !== 50) {
+            updates.max_leads = 50
+            max_leads = 50
+            needsUpdate = true
+          } else if (statsData.plan === "Starter" && max_leads !== 600) {
+            updates.max_leads = 600
+            max_leads = 600
+            needsUpdate = true
+          } else if (statsData.plan === "Pro" && max_leads !== 999999) {
+            updates.max_leads = 999999
+            max_leads = 999999
+            needsUpdate = true
+          }
+
+          if (needsUpdate) {
+            await supabase.from("stores").update(updates).eq("id", storeData.id)
+          }
+
+          const store = {
+            id: statsData.store_id,
+            name: statsData.store_name,
+            domain: statsData.domain,
+            shopify_domain: statsData.shopify_domain || statsData.domain,
+            user_id: user.id,
+            plan: statsData.plan,
+            max_leads,
+            total_leads: statsData.total_leads,
+            leads_this_month: statsData.leads_this_month,
+            remaining_leads: Math.max(max_leads - statsData.leads_this_month, 0),
+          }
+
+          setStore(store)
         }
       } catch (err) {
         console.error("Error loading dashboard:", err)
