@@ -1,15 +1,13 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Lock, LogOut, RefreshCw, Shield, Search } from "lucide-react"
+import { Lock, LogOut, RefreshCw, Shield, Search, AlertTriangle } from "lucide-react"
 
-const ADMIN_USERNAME = "memohit"
-const ADMIN_PASSWORD = "mohitmossi7738"
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
 const MAX_LOGIN_ATTEMPTS = 5
-const LOCKOUT_DURATION = 15 * 60 * 1000 // 15 minutes
 
 interface StoreStats {
   store_id: string
@@ -27,11 +25,12 @@ interface StoreStats {
 export default function AdminPanel() {
   const router = useRouter()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [loginError, setLoginError] = useState("")
-  const [loginAttempts, setLoginAttempts] = useState(0)
-  const [lockoutUntil, setLockoutUntil] = useState<number | null>(null)
+  const [remainingAttempts, setRemainingAttempts] = useState(MAX_LOGIN_ATTEMPTS)
+  const [lockoutTime, setLockoutTime] = useState<number | null>(null)
   const [stores, setStores] = useState<StoreStats[]>([])
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -39,45 +38,41 @@ export default function AdminPanel() {
   const [successMessage, setSuccessMessage] = useState("")
 
   useEffect(() => {
-    const savedAuth = localStorage.getItem("adminAuthenticated")
-    const savedAttempts = localStorage.getItem("loginAttempts")
-    const savedLockout = localStorage.getItem("lockoutUntil")
-
-    if (savedAuth === "true") {
-      setIsAuthenticated(true)
-      loadStores()
-    }
-
-    if (savedAttempts) {
-      setLoginAttempts(Number.parseInt(savedAttempts))
-    }
-
-    if (savedLockout) {
-      const lockout = Number.parseInt(savedLockout)
-      if (lockout > Date.now()) {
-        setLockoutUntil(lockout)
-      } else {
-        localStorage.removeItem("lockoutUntil")
-        localStorage.removeItem("loginAttempts")
-        setLoginAttempts(0)
-      }
-    }
+    checkAuth()
   }, [])
 
   useEffect(() => {
-    if (lockoutUntil && lockoutUntil > Date.now()) {
+    if (lockoutTime && lockoutTime > 0) {
       const timer = setInterval(() => {
-        if (Date.now() >= lockoutUntil) {
-          setLockoutUntil(null)
-          setLoginAttempts(0)
-          localStorage.removeItem("lockoutUntil")
-          localStorage.removeItem("loginAttempts")
+        const remaining = Math.ceil((lockoutTime - Date.now()) / 1000)
+        if (remaining <= 0) {
+          setLockoutTime(null)
+          setRemainingAttempts(MAX_LOGIN_ATTEMPTS)
+          setLoginError("")
           clearInterval(timer)
         }
       }, 1000)
       return () => clearInterval(timer)
     }
-  }, [lockoutUntil])
+  }, [lockoutTime])
+
+  const checkAuth = async () => {
+    setIsCheckingAuth(true)
+    try {
+      const response = await fetch("/api/admin/verify")
+      if (response.ok) {
+        const data = await response.json()
+        if (data.authenticated) {
+          setIsAuthenticated(true)
+          loadStores()
+        }
+      }
+    } catch (error) {
+      console.error("[Admin Panel] Auth check failed:", error)
+    } finally {
+      setIsCheckingAuth(false)
+    }
+  }
 
   const loadStores = async () => {
     setLoading(true)
@@ -96,45 +91,60 @@ export default function AdminPanel() {
     }
   }
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoginError("")
 
-    if (lockoutUntil && lockoutUntil > Date.now()) {
-      const remainingTime = Math.ceil((lockoutUntil - Date.now()) / 1000)
+    if (lockoutTime && lockoutTime > Date.now()) {
+      const remainingTime = Math.ceil((lockoutTime - Date.now()) / 1000)
       setLoginError(`Too many failed attempts. Try again in ${remainingTime} seconds.`)
       return
     }
 
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-      setIsAuthenticated(true)
-      localStorage.setItem("adminAuthenticated", "true")
-      localStorage.removeItem("loginAttempts")
-      localStorage.removeItem("lockoutUntil")
-      setLoginAttempts(0)
-      loadStores()
-    } else {
-      const newAttempts = loginAttempts + 1
-      setLoginAttempts(newAttempts)
-      localStorage.setItem("loginAttempts", newAttempts.toString())
+    try {
+      const response = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      })
 
-      if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
-        const lockout = Date.now() + LOCKOUT_DURATION
-        setLockoutUntil(lockout)
-        localStorage.setItem("lockoutUntil", lockout.toString())
-        setLoginError(`Too many failed attempts. Account locked for 15 minutes.`)
+      const data = await response.json()
+
+      if (response.ok) {
+        setIsAuthenticated(true)
+        setRemainingAttempts(MAX_LOGIN_ATTEMPTS)
+        setLockoutTime(null)
+        loadStores()
       } else {
-        setLoginError(`Invalid credentials. ${MAX_LOGIN_ATTEMPTS - newAttempts} attempts remaining.`)
+        if (response.status === 429) {
+          if (data.remainingTime) {
+            setLockoutTime(Date.now() + data.remainingTime * 1000)
+            setLoginError(`Too many failed attempts. Account locked for 15 minutes.`)
+          } else {
+            setLoginError(data.error || "Too many failed attempts")
+          }
+        } else {
+          setRemainingAttempts(data.remainingAttempts || 0)
+          setLoginError(data.error || "Invalid credentials")
+        }
+        setPassword("")
       }
+    } catch (error) {
+      console.error("[Admin Panel] Login error:", error)
+      setLoginError("Login failed. Please try again.")
       setPassword("")
     }
   }
 
-  const handleLogout = () => {
-    setIsAuthenticated(false)
-    localStorage.removeItem("adminAuthenticated")
-    setUsername("")
-    setPassword("")
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/admin/logout", { method: "POST" })
+      setIsAuthenticated(false)
+      setUsername("")
+      setPassword("")
+    } catch (error) {
+      console.error("[Admin Panel] Logout error:", error)
+    }
   }
 
   const handlePlanChange = async (storeId: string, newPlan: string) => {
@@ -172,6 +182,17 @@ export default function AdminPanel() {
       store.shopify_domain.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
+          <p className="text-gray-400">Verifying authentication...</p>
+        </div>
+      </div>
+    )
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4">
@@ -188,6 +209,9 @@ export default function AdminPanel() {
           {loginError && (
             <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200 text-sm">
               {loginError}
+              {remainingAttempts > 0 && remainingAttempts < MAX_LOGIN_ATTEMPTS && (
+                <div className="mt-1 text-xs">{remainingAttempts} attempts remaining</div>
+              )}
             </div>
           )}
 
@@ -201,7 +225,7 @@ export default function AdminPanel() {
                 className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter username"
                 required
-                disabled={lockoutUntil !== null && lockoutUntil > Date.now()}
+                disabled={lockoutTime !== null && lockoutTime > Date.now()}
               />
             </div>
 
@@ -214,13 +238,13 @@ export default function AdminPanel() {
                 className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter password"
                 required
-                disabled={lockoutUntil !== null && lockoutUntil > Date.now()}
+                disabled={lockoutTime !== null && lockoutTime > Date.now()}
               />
             </div>
 
             <button
               type="submit"
-              disabled={lockoutUntil !== null && lockoutUntil > Date.now()}
+              disabled={lockoutTime !== null && lockoutTime > Date.now()}
               className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
             >
               <Lock className="w-4 h-4" />
@@ -237,7 +261,11 @@ export default function AdminPanel() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 mb-4 flex items-center space-x-2">
+          <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+          <p className="text-amber-200 text-sm">Internal admin — temporary auth. Do not share access.</p>
+        </div>
+
         <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 mb-6 shadow-2xl">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
@@ -264,14 +292,12 @@ export default function AdminPanel() {
           </div>
         </div>
 
-        {/* Success Message */}
         {successMessage && (
           <div className="mb-6 p-4 bg-green-500/20 border border-green-500/50 rounded-lg text-green-200 animate-fade-in">
             {successMessage}
           </div>
         )}
 
-        {/* Search Bar */}
         <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-4 mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -285,7 +311,6 @@ export default function AdminPanel() {
           </div>
         </div>
 
-        {/* Stats Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-4">
             <div className="text-gray-400 text-sm mb-1">Total Stores</div>
@@ -301,7 +326,6 @@ export default function AdminPanel() {
           </div>
         </div>
 
-        {/* Stores Table */}
         <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
             <table className="w-full">
