@@ -161,7 +161,7 @@ export default function WidgetPage({
     console.log("[v0] Form data:", formData)
 
     if ((store?.remainingLeads || 0) <= 0) {
-      setError(`Lead limit reached for ${store?.plan || "current"} plan. Please upgrade to continue collecting leads.`)
+      setError(`Lead limit reached. Upgrade your plan to continue capturing leads.`)
       return
     }
 
@@ -210,19 +210,6 @@ export default function WidgetPage({
       if (leadError) {
         console.log("[v0] Database error:", leadError)
         throw leadError
-      }
-
-      const { error: updateError } = await supabase
-        .from("stores")
-        .update({
-          total_leads: store.remainingLeads + (store.maxLeads - store.remainingLeads) + 1,
-          leads_this_month: store.maxLeads - store.remainingLeads + 1,
-          remaining_leads: store.remainingLeads - 1,
-        })
-        .eq("id", store.id)
-
-      if (updateError) {
-        console.log("[v0] Store update error:", updateError)
       }
 
       console.log("[v0] Lead submitted successfully")

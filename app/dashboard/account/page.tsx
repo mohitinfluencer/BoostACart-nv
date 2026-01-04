@@ -75,7 +75,7 @@ export default function AccountPage() {
         const leads_this_month = monthLeadsCount || 0
 
         const max_leads = storeRecord.max_leads || 50
-        const remaining_leads = Math.max(max_leads - total_leads, 0)
+        const remaining_leads = Math.max(max_leads - leads_this_month, 0)
 
         const store = {
           ...storeRecord,
@@ -129,7 +129,7 @@ export default function AccountPage() {
     )
   }
 
-  const progressPercentage = store.plan !== "Pro" ? Math.min((store.total_leads / store.max_leads) * 100, 100) : 0
+  const progressPercentage = store.plan !== "Pro" ? Math.min((store.leads_this_month / store.max_leads) * 100, 100) : 0
 
   const getPlanBadgeStyle = (plan: string) => {
     switch (plan) {
@@ -242,9 +242,9 @@ export default function AccountPage() {
             ) : (
               <div className="mt-6">
                 <div className="flex justify-between text-sm text-gray-400 mb-2">
-                  <span>Lead Usage</span>
+                  <span>Monthly Lead Usage</span>
                   <span>
-                    {store.total_leads} / {store.max_leads}
+                    {store.leads_this_month} / {store.max_leads}
                   </span>
                 </div>
                 <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
