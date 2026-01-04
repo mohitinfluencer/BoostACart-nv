@@ -4,8 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { getWhatsAppLink } from "@/lib/whatsapp"
-import { LogOut, User, TrendingUp } from "lucide-react"
-import UsageMeter from "../../../src/components/UsageMeter"
+import { LogOut, User, AlertCircle, TrendingUp } from "lucide-react"
 
 interface Store {
   id: string
@@ -18,8 +17,6 @@ interface Store {
   remaining_leads: number
   max_leads: number
   store_slug: string
-  installed: boolean
-  installed_at: string | null
 }
 
 export default function AccountPage() {
@@ -46,7 +43,7 @@ export default function AccountPage() {
 
         const { data: storeData, error: storeError } = await supabase
           .from("stores")
-          .select("id, name, domain, user_id, plan, max_leads, store_slug, installed, installed_at")
+          .select("id, name, domain, user_id, plan, max_leads, store_slug")
           .eq("user_id", user.id)
           .limit(1)
 
@@ -238,17 +235,38 @@ export default function AccountPage() {
               </div>
             </div>
 
-            <div className="mt-6">
-              <UsageMeter
-                leadsThisMonth={store.leads_this_month}
-                maxLeads={store.max_leads}
-                plan={store.plan}
-                showUpgradeButton={true}
-                onUpgrade={() => {
-                  window.open(getWhatsAppLink("918303208502", "upgrade"), "_blank")
-                }}
-              />
-            </div>
+            {store.plan === "Pro" ? (
+              <div className="mt-6 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                <p className="text-purple-300 font-medium text-center">✨ Unlimited leads included</p>
+              </div>
+            ) : (
+              <div className="mt-6">
+                <div className="flex justify-between text-sm text-gray-400 mb-2">
+                  <span>Lead Usage</span>
+                  <span>
+                    {store.total_leads} / {store.max_leads}
+                  </span>
+                </div>
+                <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500"
+                    style={{ width: `${progressPercentage}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
+
+            {store.plan !== "Pro" && store.remaining_leads < 10 && (
+              <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-start space-x-3">
+                <AlertCircle className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-amber-300 font-medium">You are running low on leads.</p>
+                  <p className="text-amber-200/70 text-sm mt-1">
+                    Consider upgrading your plan to continue capturing leads.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* SECTION 2 — Plan & Billing */}
