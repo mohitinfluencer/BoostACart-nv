@@ -68,7 +68,7 @@ export default function WidgetCustomization({ store, onUpdateWidget }: WidgetCus
     setHasUnsavedChanges(false)
   }
 
-  const widgetUrl = `${window.location.origin}/widget/${store.shopify_domain || store.domain}`
+  const widgetUrl = `${window.location.origin}/embed/${store.shopify_domain || store.domain}`
 
   const copyToClipboard = async (text: string) => {
     try {

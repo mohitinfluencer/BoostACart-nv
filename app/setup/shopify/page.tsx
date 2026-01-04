@@ -8,38 +8,65 @@ import { getWhatsAppLink } from "@/lib/whatsapp"
 export default function ShopifySetupPage() {
   const [copied, setCopied] = useState(false)
 
-  const embedCode = `<script>
-document.addEventListener('DOMContentLoaded', function() {
-  if (window.location.pathname.includes('/products/')) {
-    document.body.addEventListener('click', async function(e) {
-      const atcButton = e.target.closest('[aria-label*="Add to cart"], .add-to-cart, .product-form__submit');
-      
-      if (atcButton) {
-        e.preventDefault();
-        
-        const productUrl = window.location.href;
-        const productName = "{{ product.title | replace: '\"', '\\\\\"' }}";
-        
-        const productData = {
-          product_url: productUrl,
-          product_name: productName,
-          variant_id: document.querySelector('[name="id"]').value,
-          quantity: document.querySelector('[name="quantity"]')?.value || 1
-        };
-        
-        await fetch('/cart/add.js', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({items: [{id: productData.variant_id, quantity: 1}]})
+  const embedCode = `<!-- ========================= -->
+<!-- BoostACart FINAL INSTALL -->
+<!-- ========================= -->
+
+<script>
+  /**
+   * BoostACart context passed from Shopify
+   * cartUrl can be overridden by store owner from dashboard
+   * If empty, widget will fallback to https://{shop}/cart
+   */
+  window.BOOSTACART_CONTEXT = {
+    shop: "{{ shop.permanent_domain }}",
+    cartUrl: "/cart",
+    product: {{ product | json }}
+  };
+</script>
+
+<script src="https://boostacart-beta-v1.vercel.app/loader.js" defer></script>
+
+<script>
+/**
+ * Detect Shopify AJAX add-to-cart
+ * Open BoostACart widget once per add
+ */
+(function () {
+  const originalFetch = window.fetch;
+  let boostacartOpened = false;
+
+  window.fetch = async function (...args) {
+    const response = await originalFetch.apply(this, args);
+
+    try {
+      const url = args[0]?.toString() || '';
+
+      if (
+        !boostacartOpened &&
+        url.includes('/cart/add') &&
+        window.BoostACart &&
+        typeof window.BoostACart.open === 'function'
+      ) {
+        boostacartOpened = true;
+
+        window.BoostACart.open({
+          shop: window.BOOSTACART_CONTEXT.shop,
+          product: window.BOOSTACART_CONTEXT.product
         });
-        
-        const widgetUrl = \`https://boostacart-beta.netlify.app/widget/monsoonkart.com?\${new URLSearchParams(productData)}\`;
-        window.location.href = widgetUrl;
       }
-    });
-  }
-});
-</script>`
+    } catch (e) {
+      console.warn('[BoostACart] fetch hook error', e);
+    }
+
+    return response;
+  };
+})();
+</script>
+
+<!-- ========================= -->
+<!-- End BoostACart -->
+<!-- ========================= -->`
 
   const handleCopy = async () => {
     try {

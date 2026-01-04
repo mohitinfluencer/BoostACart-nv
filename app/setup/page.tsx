@@ -199,39 +199,6 @@ export default function SetupGuidePage() {
               </div>
             </div>
           </div>
-
-          {/* Step 3 */}
-          <div className="bg-white/5 backdrop-blur-sm p-6 sm:p-8 rounded-2xl border border-white/10 shadow-lg hover:bg-white/10 transition-all duration-300">
-            <div className="flex items-center mb-4 sm:mb-6 gap-3 sm:gap-4">
-              <div className="w-7 sm:w-8 h-7 sm:h-8 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0 shadow-lg shadow-purple-500/25 text-sm sm:text-base">
-                3
-              </div>
-              <h2 className="text-lg sm:text-2xl font-bold text-white">Deploy Your Widget</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              <div>
-                <h3 className="font-semibold text-white mb-2 sm:mb-3 text-sm sm:text-base">Your Widget URL:</h3>
-                <p className="text-white/60 mb-3 sm:mb-4 text-xs sm:text-sm">
-                  Your widget will be available at: <br />
-                  <code className="bg-black/30 px-2 py-1 rounded text-xs sm:text-sm text-blue-300 border border-white/10 break-all">
-                    boostacart.com/widget/yourdomain.com
-                  </code>
-                </p>
-              </div>
-              <div>
-                <p className="text-white/60 mb-3 sm:mb-4 text-xs sm:text-sm">
-                  Copy this URL and paste it into your store's page or product descriptions to start capturing leads.
-                </p>
-                <Link
-                  href="/dashboard"
-                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-2 sm:py-3 px-3 sm:px-4 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-300 font-medium flex items-center justify-center space-x-2 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 text-sm sm:text-base"
-                >
-                  <Copy className="h-4 sm:h-5 w-4 sm:w-5 flex-shrink-0" />
-                  <span>Copy Widget URL</span>
-                </Link>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Support Section */}
