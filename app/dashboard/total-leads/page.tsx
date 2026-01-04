@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { Users, Download, Save, Trash2, ArrowLeft, Check } from "lucide-react"
+import { Users, Download, Save, ArrowLeft, Check } from "lucide-react"
 
 interface Lead {
   id: string
@@ -164,25 +164,6 @@ export default function TotalLeadsPage() {
     document.body.removeChild(link)
   }
 
-  const handleDelete = async () => {
-    if (selectedLeads.size === 0) return
-
-    if (!confirm(`Are you sure you want to delete ${selectedLeads.size} lead(s)?`)) return
-
-    try {
-      const { error } = await supabase.from("leads").delete().in("id", Array.from(selectedLeads))
-
-      if (!error) {
-        setLeads(leads.filter((lead) => !selectedLeads.has(lead.id)))
-        setSelectedLeads(new Set())
-        alert("Leads deleted successfully!")
-      }
-    } catch (err) {
-      console.error("Error deleting leads:", err)
-      alert("Failed to delete leads")
-    }
-  }
-
   const showToast = (message: string, type: "success" | "error" = "success") => {
     const toast = document.createElement("div")
     toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-[9999] animate-fade-in ${
@@ -253,13 +234,6 @@ export default function TotalLeadsPage() {
               >
                 <Download className="h-4 w-4" />
                 <span>Download</span>
-              </button>
-              <button
-                onClick={handleDelete}
-                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-lg hover:from-red-700 hover:to-pink-700 transition-all duration-300 shadow-lg"
-              >
-                <Trash2 className="h-4 w-4" />
-                <span>Delete</span>
               </button>
             </div>
           )}
