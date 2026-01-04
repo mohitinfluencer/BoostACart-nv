@@ -1,0 +1,74 @@
+-- ==========================================
+-- BoostACart Lead Counting System Documentation
+-- ==========================================
+--
+-- This script documents how leads are counted in BoostACart.
+-- It does NOT make any changes to the database.
+--
+-- SINGLE SOURCE OF TRUTH: leads table
+-- All lead counts are calculated by querying the leads table directly.
+--
+-- KEY CHANGES:
+-- 1. Removed dependency on stores.total_leads, stores.leads_this_month, stores.remaining_leads
+-- 2. These columns still exist but are NO LONGER UPDATED
+-- 3. All queries now use the store_lead_stats VIEW
+--
+-- LEAD COUNTING LOGIC:
+--
+-- total_leads:
+--   SELECT COUNT(*) FROM leads WHERE store_id = <store_id>
+--
+-- leads_this_month:
+--   SELECT COUNT(*) FROM leads 
+--   WHERE store_id = <store_id> 
+--   AND created_at >= date_trunc('month', now())
+--
+-- leads_today:
+--   SELECT COUNT(*) FROM leads 
+--   WHERE store_id = <store_id> 
+--   AND created_at >= current_date
+--
+-- remaining_leads:
+--   max_leads - leads_this_month
+--   (NOT max_leads - total_leads)
+--
+-- PLAN LIMITS (monthly):
+-- - Free: 50 leads/month
+-- - Starter: 600 leads/month  
+-- - Pro: 999999 leads/month (effectively unlimited)
+--
+-- WIDGET BLOCKING:
+-- Widget stops accepting leads when leads_this_month >= max_leads
+-- Check happens in /api/check-lead-limit
+--
+-- AFFECTED COMPONENTS:
+-- - /app/dashboard/page.tsx (main dashboard)
+-- - /app/dashboard/account/page.tsx (account overview)
+-- - /src/components/UsageMeter.tsx (progress bar)
+-- - /app/api/check-lead-limit/route.ts (widget limit check)
+-- - /public/loader.js (widget loader - checks limit before opening)
+--
+-- store_lead_stats VIEW:
+-- This view is already created in Supabase and provides real-time stats.
+-- Schema:
+--   - store_id: uuid
+--   - store_name: text
+--   - plan: text
+--   - max_leads: integer
+--   - total_leads: bigint (all-time count)
+--   - leads_this_month: bigint (current month count)
+--   - leads_today: bigint (today's count)
+--   - remaining_leads: bigint (max_leads - leads_this_month)
+--
+-- DEPRECATED COLUMNS (do NOT use):
+-- - stores.total_leads (no longer updated)
+-- - stores.leads_this_month (no longer updated)
+-- - stores.remaining_leads (no longer updated)
+--
+-- These columns still exist for backward compatibility but are NOT maintained.
+-- They may contain stale/incorrect data.
+--
+-- To get accurate lead counts, ALWAYS query:
+--   SELECT * FROM store_lead_stats WHERE store_id = <store_id>
+--
+-- ==========================================
