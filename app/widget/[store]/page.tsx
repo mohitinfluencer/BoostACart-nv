@@ -49,6 +49,8 @@ export default function WidgetPage({
   const [error, setError] = useState<string | null>(null)
   const [detectedProduct, setDetectedProduct] = useState<string>("")
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
+  const [checkingLimit, setCheckingLimit] = useState(false)
+  const [limitReached, setLimitReached] = useState(false)
 
   useEffect(() => {
     const loadStore = async () => {
@@ -63,6 +65,17 @@ export default function WidgetPage({
 
         if (!statsError && statsData) {
           console.log("[v0] ✅ Found store from store_lead_stats:", statsData.store_name)
+          console.log(
+            "[v0] Plan limits - Used:",
+            statsData.leads_this_month,
+            "Max:",
+            statsData.max_leads,
+            "Remaining:",
+            statsData.remaining_leads,
+          )
+
+          const isAtLimit = (statsData.leads_this_month || 0) >= (statsData.max_leads || 50)
+          setLimitReached(isAtLimit)
 
           const { data: settingsData } = await supabase
             .from("widget_settings")
@@ -77,8 +90,8 @@ export default function WidgetPage({
               domain: statsData.domain,
               shopify_domain: statsData.shopify_domain || statsData.domain,
               plan: statsData.plan || "Free",
-              remainingLeads: statsData.remaining_leads,
-              maxLeads: statsData.max_leads,
+              remainingLeads: statsData.remaining_leads || 0,
+              maxLeads: statsData.max_leads || 50,
               widgetSettings: {
                 heading: settingsData.heading || "Get Exclusive Discount!",
                 description: settingsData.description || "Leave your details and get 20% off your next order",
@@ -211,79 +224,102 @@ export default function WidgetPage({
     if (!store) return
 
     console.log("[v0] Form submission started")
-    console.log("[v0] Widget settings:", store.widgetSettings)
-    console.log("[v0] Form data:", formData)
 
-    if ((store?.remainingLeads || 0) <= 0) {
-      setError(`Lead limit reached. Upgrade your plan to continue capturing leads.`)
-      return
-    }
-
-    if (!formData.name.trim()) {
-      setError("Name is required")
-      return
-    }
-
-    if (store.widgetSettings.showEmail && !formData.email.trim()) {
-      console.log("[v0] Email validation failed - showEmail:", store.widgetSettings.showEmail, "email:", formData.email)
-      setError("Email is required")
-      return
-    }
-
-    if (store.widgetSettings.showPhone && !formData.phone.trim()) {
-      console.log("[v0] Phone validation failed - showPhone:", store.widgetSettings.showPhone, "phone:", formData.phone)
-      setError("Phone number is required")
-      return
-    }
-
-    console.log("[v0] All validations passed, submitting to database")
-
-    setIsSubmitting(true)
+    setCheckingLimit(true)
     setError(null)
 
     try {
-      const leadData: any = {
-        store_id: store.id,
-        name: formData.name.trim(),
-        detected_product: detectedProduct || "Product",
-        product_name: detectedProduct || "Product",
+      const { data: currentStats, error: statsError } = await supabase
+        .from("store_lead_stats")
+        .select("leads_this_month, max_leads, remaining_leads")
+        .eq("shopify_domain", shopifyDomain)
+        .maybeSingle()
+
+      if (statsError) {
+        console.error("[v0] Error checking lead limits:", statsError)
+        setError("Failed to verify lead allowance. Please try again.")
+        setCheckingLimit(false)
+        return
       }
 
-      if (store.widgetSettings.showEmail && formData.email.trim()) {
-        leadData.email = formData.email.trim()
+      if (!currentStats) {
+        console.error("[v0] No stats found for store")
+        setError("Store configuration not found")
+        setCheckingLimit(false)
+        return
       }
 
-      if (store.widgetSettings.showPhone && formData.phone.trim()) {
-        leadData.phone = formData.phone.trim()
+      console.log("[v0] Current lead usage:", currentStats.leads_this_month, "/", currentStats.max_leads)
+
+      if ((currentStats.leads_this_month || 0) >= (currentStats.max_leads || 50)) {
+        console.log("[v0] ❌ Lead limit reached - blocking submission")
+        setLimitReached(true)
+        setCheckingLimit(false)
+        return
       }
 
-      console.log("[v0] Submitting lead data:", leadData)
+      setCheckingLimit(false)
 
-      const { error: leadError } = await supabase.from("leads").insert(leadData)
-
-      if (leadError) {
-        console.log("[v0] Database error:", leadError)
-        throw leadError
+      if (!formData.name.trim()) {
+        setError("Name is required")
+        return
       }
 
-      console.log("[v0] Lead submitted successfully")
+      if (store.widgetSettings.showEmail && !formData.email.trim()) {
+        setError("Email is required")
+        return
+      }
+
+      if (store.widgetSettings.showPhone && !formData.phone.trim()) {
+        setError("Phone number is required")
+        return
+      }
+
+      console.log("[v0] All validations passed, submitting to API")
+
+      setIsSubmitting(true)
+
+      const response = await fetch("/api/leads", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          store_id: store.id,
+          shopify_domain: shopifyDomain,
+          name: formData.name.trim(),
+          email: store.widgetSettings.showEmail ? formData.email.trim() : null,
+          phone: store.widgetSettings.showPhone ? formData.phone.trim() : null,
+          detected_product: detectedProduct || "Product",
+          product_name: detectedProduct || "Product",
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        if (result.reason === "PLAN_LIMIT_REACHED") {
+          console.log("[v0] ❌ Backend rejected - plan limit reached")
+          setLimitReached(true)
+          setIsSubmitting(false)
+          return
+        }
+        throw new Error(result.error || "Failed to save lead")
+      }
+
+      console.log("[v0] ✅ Lead submitted successfully")
 
       if (store.widgetSettings.showCouponPage) {
         setIsSubmitted(true)
       } else {
-        console.log("[v0] Sending navigation request to parent")
-        window.parent.postMessage(
-          {
-            type: "BOOSTACART_GO_TO_CART",
-          },
-          "*",
-        )
+        window.parent.postMessage({ type: "BOOSTACART_GO_TO_CART" }, "*")
       }
     } catch (err) {
-      console.error("Failed to submit lead:", err)
+      console.error("[v0] Failed to submit lead:", err)
       setError("Failed to submit. Please try again.")
     } finally {
       setIsSubmitting(false)
+      setCheckingLimit(false)
     }
   }
 
@@ -304,7 +340,6 @@ export default function WidgetPage({
 
       window.open(redirectUrl, "_blank", "noopener,noreferrer")
 
-      // Re-enable button after 1.5 seconds
       setTimeout(() => {
         setIsButtonDisabled(false)
       }, 1500)
@@ -344,6 +379,60 @@ export default function WidgetPage({
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="text-lg text-gray-600">Widget is currently inactive</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (limitReached) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{ backgroundColor: `rgba(0, 0, 0, ${store.widgetSettings.overlayOpacity})` }}
+      >
+        <div
+          className="max-w-md w-full p-8 rounded-2xl shadow-2xl text-center"
+          style={{
+            backgroundColor: store.widgetSettings.backgroundColor,
+            color: store.widgetSettings.textColor,
+          }}
+          role="dialog"
+          aria-labelledby="limit-title"
+          aria-describedby="limit-description"
+        >
+          <div className="mx-auto w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mb-4">
+            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+          </div>
+
+          <h2 id="limit-title" className="text-2xl font-bold mb-2">
+            Lead Limit Reached
+          </h2>
+
+          <p id="limit-description" className="text-sm opacity-90 mb-6">
+            You've reached your plan limit. Upgrade your plan to continue capturing leads.
+          </p>
+
+          <a
+            href={`https://${window.location.hostname}/dashboard/account`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block w-full py-4 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-opacity-50 mb-3"
+            style={{
+              backgroundColor: store.widgetSettings.buttonColor,
+              boxShadow: "0 4px 14px 0 rgba(0, 0, 0, 0.2)",
+            }}
+          >
+            Upgrade Plan
+          </a>
+
+          <p className="text-xs opacity-75 mt-4">Contact your account administrator</p>
         </div>
       </div>
     )
@@ -431,6 +520,13 @@ export default function WidgetPage({
           color: store.widgetSettings.textColor,
         }}
       >
+        {checkingLimit && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center space-x-3">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+            <div className="text-sm text-blue-700 font-medium">Checking lead allowance...</div>
+          </div>
+        )}
+
         <h3 className="text-xl font-bold mb-2">{store.widgetSettings.heading}</h3>
         <p className="text-sm mb-6 opacity-90">{store.widgetSettings.description}</p>
 
@@ -479,11 +575,11 @@ export default function WidgetPage({
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || checkingLimit}
             className="w-full py-3 rounded-lg font-medium text-white transition-colors disabled:opacity-50"
             style={{ backgroundColor: store.widgetSettings.buttonColor }}
           >
-            {isSubmitting ? "Processing..." : store.widgetSettings.buttonText}
+            {checkingLimit ? "Checking..." : isSubmitting ? "Processing..." : store.widgetSettings.buttonText}
           </button>
           <p className="text-xs opacity-75 text-center">Get exclusive discount code after submission</p>
         </form>

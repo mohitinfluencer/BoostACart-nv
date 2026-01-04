@@ -6,7 +6,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import LeadsAnalytics from "../../src/components/LeadsAnalytics"
 import WidgetCustomization from "../../src/components/WidgetCustomization"
-import { User, FileText, HelpCircle, MessageCircle } from "lucide-react"
+import { User, FileText, HelpCircle, MessageCircle, AlertTriangle } from "lucide-react"
 
 interface Store {
   id: string
@@ -44,6 +44,7 @@ export default function Dashboard() {
   const [store, setStore] = useState<Store | null>(null)
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [showLimitWarning, setShowLimitWarning] = useState(false)
   const [widgetSettings, setWidgetSettings] = useState<WidgetSettings>({
     heading: "Get Exclusive Discount!",
     description: "Leave your details and get 20% off your next order",
@@ -179,6 +180,9 @@ export default function Dashboard() {
             remaining_leads: Math.max(max_leads - statsData.leads_this_month, 0),
           }
 
+          const isAtOrOverLimit = (statsData.leads_this_month || 0) >= max_leads
+          setShowLimitWarning(isAtOrOverLimit)
+
           setStore(store)
         }
       } catch (err) {
@@ -268,12 +272,31 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full blur-xl animate-pulse"></div>
-        <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-green-500/20 to-blue-500/20 rounded-full blur-lg animate-bounce"></div>
-        <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full blur-2xl animate-pulse"></div>
-        <div className="absolute bottom-40 right-1/3 w-28 h-28 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-full blur-xl animate-bounce"></div>
-      </div>
+      {showLimitWarning && store && (
+        <div className="bg-gradient-to-r from-orange-500 to-red-500 border-b border-orange-600 relative z-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-start space-x-3">
+                <AlertTriangle className="h-6 w-6 text-white flex-shrink-0 mt-0.5" />
+                <div className="text-white">
+                  <p className="font-semibold text-sm sm:text-base">
+                    You have reached your monthly lead quota ({store.leads_this_month}/{store.max_leads})
+                  </p>
+                  <p className="text-xs sm:text-sm opacity-90 mt-1">
+                    Upgrade to continue capturing leads and growing your business
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/dashboard/account"
+                className="flex-shrink-0 px-6 py-2 bg-white text-orange-600 font-semibold rounded-lg hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl text-sm"
+              >
+                Upgrade Plan
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="bg-white/10 backdrop-blur-md border-b border-white/20 shadow-lg relative z-10">
