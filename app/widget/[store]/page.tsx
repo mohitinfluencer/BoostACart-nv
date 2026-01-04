@@ -3,7 +3,6 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { X } from "lucide-react"
 
 interface WidgetSettings {
   heading: string
@@ -50,30 +49,6 @@ export default function WidgetPage({
   const [error, setError] = useState<string | null>(null)
   const [detectedProduct, setDetectedProduct] = useState<string>("")
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 900)
-    }
-    checkMobile()
-    window.addEventListener("resize", checkMobile)
-    return () => window.removeEventListener("resize", checkMobile)
-  }, [])
-
-  useEffect(() => {
-    document.body.style.overflow = "hidden"
-    document.body.style.position = "fixed"
-    document.body.style.width = "100%"
-    document.body.style.height = "100%"
-
-    return () => {
-      document.body.style.overflow = ""
-      document.body.style.position = ""
-      document.body.style.width = ""
-      document.body.style.height = ""
-    }
-  }, [])
 
   useEffect(() => {
     const loadStore = async () => {
@@ -175,10 +150,6 @@ export default function WidgetPage({
     setDetectedProduct(productName)
   }, [shopifyDomain, searchParams, supabase])
 
-  const handleClose = () => {
-    window.parent.postMessage({ type: "BOOSTACART_CLOSE" }, "*")
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -186,6 +157,8 @@ export default function WidgetPage({
     if (!store) return
 
     console.log("[v0] Form submission started")
+    console.log("[v0] Widget settings:", store.widgetSettings)
+    console.log("[v0] Form data:", formData)
 
     if ((store?.remainingLeads || 0) <= 0) {
       setError(`Lead limit reached for ${store?.plan || "current"} plan. Please upgrade to continue collecting leads.`)
@@ -198,14 +171,18 @@ export default function WidgetPage({
     }
 
     if (store.widgetSettings.showEmail && !formData.email.trim()) {
+      console.log("[v0] Email validation failed - showEmail:", store.widgetSettings.showEmail, "email:", formData.email)
       setError("Email is required")
       return
     }
 
     if (store.widgetSettings.showPhone && !formData.phone.trim()) {
+      console.log("[v0] Phone validation failed - showPhone:", store.widgetSettings.showPhone, "phone:", formData.phone)
       setError("Phone number is required")
       return
     }
+
+    console.log("[v0] All validations passed, submitting to database")
 
     setIsSubmitting(true)
     setError(null)
@@ -226,10 +203,26 @@ export default function WidgetPage({
         leadData.phone = formData.phone.trim()
       }
 
+      console.log("[v0] Submitting lead data:", leadData)
+
       const { error: leadError } = await supabase.from("leads").insert(leadData)
 
       if (leadError) {
+        console.log("[v0] Database error:", leadError)
         throw leadError
+      }
+
+      const { error: updateError } = await supabase
+        .from("stores")
+        .update({
+          total_leads: store.remainingLeads + (store.maxLeads - store.remainingLeads) + 1,
+          leads_this_month: store.maxLeads - store.remainingLeads + 1,
+          remaining_leads: store.remainingLeads - 1,
+        })
+        .eq("id", store.id)
+
+      if (updateError) {
+        console.log("[v0] Store update error:", updateError)
       }
 
       console.log("[v0] Lead submitted successfully")
@@ -237,7 +230,13 @@ export default function WidgetPage({
       if (store.widgetSettings.showCouponPage) {
         setIsSubmitted(true)
       } else {
-        window.parent.postMessage({ type: "BOOSTACART_GO_TO_CART" }, "*")
+        console.log("[v0] Sending navigation request to parent")
+        window.parent.postMessage(
+          {
+            type: "BOOSTACART_GO_TO_CART",
+          },
+          "*",
+        )
       }
     } catch (err) {
       console.error("Failed to submit lead:", err)
@@ -254,13 +253,17 @@ export default function WidgetPage({
       await navigator.clipboard.writeText(store.widgetSettings.discountCode)
       setIsCopied(true)
       setIsButtonDisabled(true)
+      console.log("[v0] Code copied successfully")
 
       const redirectUrl = store.widgetSettings.redirectUrl
         ? store.widgetSettings.redirectUrl
         : `https://${store.shopify_domain}/cart`
 
+      console.log("[v0] Opening redirect URL in new tab:", redirectUrl)
+
       window.open(redirectUrl, "_blank", "noopener,noreferrer")
 
+      // Re-enable button after 1.5 seconds
       setTimeout(() => {
         setIsButtonDisabled(false)
       }, 1500)
@@ -283,8 +286,8 @@ export default function WidgetPage({
 
   if (error && !store) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="text-center max-w-md">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Store Not Found</h1>
           <p className="text-gray-600">
             Could not find a store with shopify_domain: <strong className="text-gray-900">{shopifyDomain}</strong>
@@ -306,21 +309,15 @@ export default function WidgetPage({
   }
 
   if (isSubmitted) {
+    const cartUrl = store?.shopify_domain ? `https://${store.shopify_domain}/cart` : "/cart"
+
     return (
       <div
         className="min-h-screen flex items-center justify-center p-4"
         style={{ backgroundColor: `rgba(0, 0, 0, ${store.widgetSettings.overlayOpacity})` }}
       >
-        <button
-          onClick={handleClose}
-          className="fixed top-4 right-4 z-50 w-10 h-10 flex items-center justify-center bg-white/90 hover:bg-white rounded-full shadow-lg transition-all duration-300"
-          aria-label="Close widget"
-        >
-          <X className="h-5 w-5 text-gray-700" />
-        </button>
-
         <div
-          className={`w-full p-8 rounded-2xl shadow-2xl text-center ${isMobile ? "max-w-full mx-4" : "max-w-md"}`}
+          className="max-w-md w-full p-8 rounded-2xl shadow-2xl text-center"
           style={{
             backgroundColor: store.widgetSettings.backgroundColor,
             color: store.widgetSettings.textColor,
@@ -355,7 +352,7 @@ export default function WidgetPage({
             className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 p-4 rounded-xl mb-6"
             aria-live="polite"
           >
-            <div className="text-green-800 font-mono text-2xl font-bold tracking-wider break-all">
+            <div className="text-green-800 font-mono text-2xl font-bold tracking-wider">
               {store.widgetSettings.discountCode}
             </div>
           </div>
@@ -383,21 +380,11 @@ export default function WidgetPage({
 
   return (
     <div
-      className={`min-h-screen flex ${isMobile ? "items-end" : "items-center"} justify-center`}
+      className="min-h-screen flex items-center justify-center"
       style={{ backgroundColor: `rgba(0, 0, 0, ${store.widgetSettings.overlayOpacity})` }}
     >
-      <button
-        onClick={handleClose}
-        className="fixed top-4 right-4 z-50 w-10 h-10 flex items-center justify-center bg-white/90 hover:bg-white rounded-full shadow-lg transition-all duration-300"
-        aria-label="Close widget"
-      >
-        <X className="h-5 w-5 text-gray-700" />
-      </button>
-
       <div
-        className={`w-full p-6 shadow-xl ${
-          isMobile ? "rounded-t-3xl max-h-[90vh] overflow-y-auto" : "max-w-md mx-4 rounded-lg"
-        }`}
+        className="max-w-md w-full mx-4 p-6 rounded-lg shadow-xl"
         style={{
           backgroundColor: store.widgetSettings.backgroundColor,
           color: store.widgetSettings.textColor,

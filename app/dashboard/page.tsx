@@ -6,9 +6,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import LeadsAnalytics from "../../src/components/LeadsAnalytics"
 import WidgetCustomization from "../../src/components/WidgetCustomization"
-import UsageMeter from "../../src/components/UsageMeter"
-import { getWhatsAppLink } from "@/lib/whatsapp"
-import { User, FileText, HelpCircle, MessageCircle, AlertCircle, CheckCircle, Copy } from "lucide-react"
+import { User, FileText, HelpCircle, MessageCircle } from "lucide-react"
 
 interface Store {
   id: string
@@ -21,8 +19,6 @@ interface Store {
   remaining_leads?: number
   total_leads?: number
   leads_this_month?: number
-  installed?: boolean
-  installed_at?: string
 }
 
 interface WidgetSettings {
@@ -62,7 +58,6 @@ export default function Dashboard() {
     discountCode: "SAVE20",
     showCouponPage: true,
   })
-  const [installSnippetCopied, setInstallSnippetCopied] = useState(false)
 
   useEffect(() => {
     const loadUserAndStore = async () => {
@@ -80,7 +75,7 @@ export default function Dashboard() {
 
         const { data: storeData, error: storeError } = await supabase
           .from("stores")
-          .select("id, name, domain, shopify_domain, user_id, plan, max_leads, installed, installed_at")
+          .select("id, name, domain, shopify_domain, user_id, plan, max_leads")
           .eq("user_id", user.id)
           .limit(1)
 
@@ -97,19 +92,19 @@ export default function Dashboard() {
 
         const storeRecord = storeData[0]
 
-        const { data: statsData, error: statsError } = await supabase
-          .from("store_lead_stats")
-          .select("total_leads, leads_this_month, leads_today, remaining_leads")
+        const { count: totalLeadsCount } = await supabase
+          .from("leads")
+          .select("*", { count: "exact", head: true })
           .eq("store_id", storeRecord.id)
-          .maybeSingle()
 
-        if (statsError) {
-          console.error("Error loading lead stats:", statsError)
-        }
+        const { count: monthLeadsCount } = await supabase
+          .from("leads")
+          .select("*", { count: "exact", head: true })
+          .eq("store_id", storeRecord.id)
+          .gte("created_at", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
 
-        const total_leads = statsData?.total_leads || 0
-        const leads_this_month = statsData?.leads_this_month || 0
-        const leads_today = statsData?.leads_today || 0
+        const total_leads = totalLeadsCount || 0
+        const leads_this_month = monthLeadsCount || 0
 
         let max_leads = storeRecord.max_leads
         let needsUpdate = false
@@ -133,7 +128,7 @@ export default function Dashboard() {
           await supabase.from("stores").update(updates).eq("id", storeRecord.id)
         }
 
-        const remaining_leads = Math.max(max_leads - leads_this_month, 0)
+        const remaining_leads = Math.max(max_leads - total_leads, 0)
 
         const store = {
           ...storeRecord,
@@ -221,34 +216,6 @@ export default function Dashboard() {
       }
     } catch (err) {
       console.error("Error saving widget settings:", err)
-    }
-  }
-
-  const copyInstallSnippet = async () => {
-    const snippet = `<!-- BoostACart Widget Loader -->
-<script src="https://boostacart-beta-v1.vercel.app/loader.js"></script>
-<script>
-  // Example: Open widget on "Add to Cart" button click
-  document.addEventListener('DOMContentLoaded', function() {
-    var addToCartButtons = document.querySelectorAll('[name="add"]');
-    addToCartButtons.forEach(function(button) {
-      button.addEventListener('click', function() {
-        window.BoostACart.open({
-          shop: '${store?.shopify_domain || "your-store.myshopify.com"}',
-          product_id: 'PRODUCT_ID',
-          product_title: 'Product Name'
-        });
-      });
-    });
-  });
-</script>`
-
-    try {
-      await navigator.clipboard.writeText(snippet)
-      setInstallSnippetCopied(true)
-      setTimeout(() => setInstallSnippetCopied(false), 2000)
-    } catch (err) {
-      console.error("Failed to copy snippet:", err)
     }
   }
 
@@ -345,58 +312,6 @@ export default function Dashboard() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px:8 py-4 sm:py-8 relative z-10">
-        {/* Installation Status Banner */}
-        {store && (
-          <div className="mb-6">
-            {store.installed ? (
-              <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 flex items-start space-x-3">
-                <CheckCircle className="h-6 w-6 text-green-400 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-green-300 font-semibold">BoostACart is successfully installed on your store!</p>
-                  <p className="text-green-200/70 text-sm mt-1">
-                    Installed on {new Date(store.installed_at).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
-                <div className="flex items-start space-x-3 mb-3">
-                  <AlertCircle className="h-6 w-6 text-amber-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-amber-300 font-semibold">Not installed yet — follow the setup steps.</p>
-                    <p className="text-amber-200/70 text-sm mt-1">
-                      Add the BoostACart script to your Shopify theme to start collecting leads.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={copyInstallSnippet}
-                  className="flex items-center space-x-2 px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg transition-all duration-300 text-sm font-medium"
-                >
-                  <Copy className="h-4 w-4" />
-                  <span>{installSnippetCopied ? "Copied!" : "Copy Install Snippet"}</span>
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Usage Meter */}
-        {activeTab === "analytics" && store && (
-          <div className="mb-6">
-            <UsageMeter
-              totalLeads={store.total_leads || 0}
-              leadsThisMonth={store.leads_this_month || 0}
-              maxLeads={store.max_leads || 50}
-              plan={store.plan}
-              showUpgradeButton={true}
-              onUpgrade={() => {
-                window.open(getWhatsAppLink("918303208502", "upgrade"), "_blank")
-              }}
-            />
-          </div>
-        )}
-
         {activeTab === "analytics" && <LeadsAnalytics store={storeWithSettings} leads={[]} />}
         {activeTab === "customization" && (
           <WidgetCustomization store={storeWithSettings} onUpdateWidget={onUpdateWidget} />
