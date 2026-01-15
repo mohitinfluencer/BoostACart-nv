@@ -233,7 +233,7 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-sm p-4 sm:p-8 rounded-2xl border border-white/10 hover:border-green-500/30 transition-all duration-300 hover:bg-white/10 group">
+            <div className="bg-white/5 backdrop-blur-sm p-4 sm:p-8 rounded-2xl border border-white/10 hover:border-green-500/30 transition-all duration-300 hover:bg-white/10 group">
               <div className="w-10 sm:w-12 h-10 sm:h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center mb-4 sm:mb-6 text-white shadow-lg shadow-green-500/25 group-hover:shadow-green-500/40 transition-all duration-300">
                 <TrendingUpIcon />
               </div>
