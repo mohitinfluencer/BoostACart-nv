@@ -67,15 +67,18 @@ export default function LandingPage() {
               >
                 Contact Us
               </Link>
-              <Link href="/auth/login" className="text-white/70 hover:text-white transition-colors">
+              <a 
+                href="https://boostacaartt.netlify.app/auth/login" 
+                className="text-white/70 hover:text-white transition-colors"
+              >
                 Sign In
-              </Link>
-              <Link
-                href="/auth/sign-up"
+              </a>
+              <a
+                href="https://boostacaartt.netlify.app/auth/sign-up"
                 className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40"
               >
                 Get Started
-              </Link>
+              </a>
             </div>
             <div className="md:hidden">
               <Sheet>
@@ -99,18 +102,18 @@ export default function LandingPage() {
                     >
                       Contact Us
                     </Link>
-                    <Link
-                      href="/auth/login"
-                      className="w-full px-4 py-3 text-white/80 hover:text-white transition-colors border border-white/20 rounded-lg hover:border-white/30 text-center"
+                    <a 
+                      href="https://boostacaartt.netlify.app/auth/login" 
+                      className="w-full px-4 py-3 text-white/70 hover:text-white transition-colors text-center border border-white/10 rounded-lg hover:bg-white/5"
                     >
                       Sign In
-                    </Link>
-                    <Link
-                      href="/auth/sign-up"
-                      className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 text-center"
+                    </a>
+                    <a
+                      href="https://boostacaartt.netlify.app/auth/sign-up"
+                      className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 text-center"
                     >
                       Get Started
-                    </Link>
+                    </a>
                   </div>
                 </SheetContent>
               </Sheet>
@@ -326,7 +329,7 @@ export default function LandingPage() {
               <div className="mt-8">
                 <Link
                   href="/shopify-cart-recovery"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-300 shadow-lg shadow-green-500/25 hover:shadow-green-500/40"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-300 shadow-lg shadow-green-500/25 hover:shadow-green-500/40 transform hover:-translate-y-0.5"
                 >
                   Cart Recovery for Shopify Stores
                   <ArrowRightIcon className="w-4 h-4" />
@@ -408,7 +411,7 @@ export default function LandingPage() {
                   <div className="text-green-400">
                     <CheckIcon />
                   </div>
-                  <span className="text-white/80 ml-3 text-sm sm:text-base">Up to 50 leads/month</span>
+                  <span className="text-white/80 ml-3 text-sm sm:text-base">Up to 100 leads/month</span>
                 </li>
                 <li className="flex items-center">
                   <div className="text-green-400">
@@ -439,7 +442,7 @@ export default function LandingPage() {
               </div>
               <div className="text-center mb-6 sm:mb-8">
                 <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">Starter Plan</h3>
-                <div className="text-3xl sm:text-4xl font-bold text-white mb-2">$19</div>
+                <div className="text-3xl sm:text-4xl font-bold text-white mb-2">$29</div>
                 <p className="text-white/60 text-sm sm:text-base">For growing stores</p>
               </div>
               <ul className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
@@ -447,7 +450,7 @@ export default function LandingPage() {
                   <div className="text-green-400">
                     <CheckIcon />
                   </div>
-                  <span className="text-white/80 ml-3 text-sm sm:text-base">600 leads per month</span>
+                  <span className="text-white/80 ml-3 text-sm sm:text-base">1,000 leads per month</span>
                 </li>
                 <li className="flex items-center">
                   <div className="text-green-400">
